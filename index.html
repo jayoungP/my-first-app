@@ -756,11 +756,14 @@
   renderRecords();
   renderTab();
 
+  // 그래프 영역의 크기가 바뀔 때마다(창 크기, 크게 보기, 옆 패널 높이 변화) 다시 그린다
   let resizeTimer;
-  window.addEventListener('resize', () => {
+  const redrawSoon = () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { if (state.tab === 'lab') drawChart(); }, 80);
-  });
+    resizeTimer = setTimeout(() => { if (state.tab === 'lab') drawChart(); }, 50);
+  };
+  if (window.ResizeObserver) new ResizeObserver(redrawSoon).observe($('chart'));
+  else window.addEventListener('resize', redrawSoon);
 })();
 </script>
 </body>
