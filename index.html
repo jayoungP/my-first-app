@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>효소 반응 모의 실험실</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --ink: #1d2433;
+    --muted: #5b6475;
+    --line: #dde3ee;
+    --accent: #2f6fde;
+    --accent-soft: #e7efff;
+    --point: #e11d48;
+    --ref: #8a93a6;
+    --good: #15803d;
+    --good-soft: #e7f6ec;
+    --bad: #b91c1c;
+    --bad-soft: #fdecec;
+    --changed: #fff1b8;
+    --warn: #b45309;
+    font-size: 18px;
+  }
+  html.big { font-size: 23px; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.5;
+  }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  /* 상단 */
+  header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .7rem 1.4rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { font-size: 1.35rem; margin: 0; white-space: nowrap; }
+  .tabs { display: flex; gap: .4rem; margin-left: auto; }
+  .tab {
+    border: 1px solid var(--line); background: var(--panel);
+    padding: .35rem 1.1rem; border-radius: 999px; font-weight: 600;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .big-btn { border: 1px solid var(--line); background: var(--panel); padding: .35rem .9rem; border-radius: .5rem; }
+  html.big .big-btn { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  main { max-width: 1400px; margin: 0 auto; padding: 1.1rem 1.4rem 2rem; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: .8rem; padding: 1rem 1.2rem;
+  }
+  .panel h2 { font-size: 1.1rem; margin: 0 0 .7rem; }
+  [hidden] { display: none !important; }
+
+  /* 실험 화면 */
+  .lab { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 1rem; }
+  .control { margin-bottom: .9rem; }
+  .control-head { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }
+  .control-head output { font-variant-numeric: tabular-nums; color: var(--accent); font-size: 1.1rem; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); height: 1.6rem; }
+  select { width: 100%; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: .45rem; background: #fff; }
+  .hint { color: var(--muted); font-size: .8rem; font-weight: 400; }
+  .radios { display: grid; gap: .25rem; margin-top: .3rem; }
+  .radios label { display: flex; gap: .5rem; align-items: flex-start; font-weight: 400; }
+  .radios input { width: 1.05rem; height: 1.05rem; margin-top: .3rem; accent-color: var(--accent); flex: none; }
+  .radios .hint { display: block; line-height: 1.3; }
+  .btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid var(--line); background: #fff;
+    padding: .45rem 1rem; border-radius: .5rem; font-weight: 600;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .status { min-height: 1.4em; color: var(--warn); font-size: .85rem; margin-top: .4rem; }
+
+  .graph-head { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; margin-bottom: .5rem; }
+  .graph-head h2 { margin: 0; }
+  .axis-pick { display: flex; gap: .3rem; flex-wrap: wrap; }
+  .axis-pick button {
+    border: 1px solid var(--line); background: #fff; padding: .25rem .8rem; border-radius: 999px;
+  }
+  .axis-pick button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .graph-note { color: var(--muted); font-size: .85rem; margin: 0 0 .3rem; }
+  .graph-panel { display: flex; flex-direction: column; }
+  .canvas-wrap { position: relative; width: 100%; flex: 1; min-height: 340px; }
+  html.big .canvas-wrap { min-height: 430px; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .rate {
+    display: flex; align-items: center; gap: 1rem;
+    margin-top: .8rem; padding-top: .8rem; border-top: 1px solid var(--line);
+  }
+  .rate-label { font-weight: 600; white-space: nowrap; }
+  .rate-value { font-size: 1.8rem; font-weight: 800; color: var(--point); font-variant-numeric: tabular-nums; min-width: 4.2ch; text-align: right; }
+  .bar { flex: 1; height: 1.1rem; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: var(--point); border-radius: 999px; transition: width .2s; }
+
+  .records { margin-top: 1rem; }
+  .records-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: .6rem; }
+  .records-head h2 { margin: 0; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { border-bottom: 1px solid var(--line); padding: .4rem .6rem; text-align: center; white-space: nowrap; }
+  th { background: #f7f9fc; font-size: .9rem; color: var(--muted); }
+  td.changed { background: var(--changed); font-weight: 700; }
+  td.note-ok { color: var(--good); }
+  td.note-warn { color: var(--warn); font-weight: 600; }
+  .empty { color: var(--muted); padding: 1rem; text-align: center; }
+  .legend-changed { display: inline-block; width: .9rem; height: .9rem; background: var(--changed); border: 1px solid #e6d27a; vertical-align: -2px; margin-right: .2rem; }
+  textarea {
+    width: 100%; min-height: 4.5rem; margin-top: .3rem; resize: vertical;
+    border: 1px solid var(--line); border-radius: .5rem; padding: .5rem .7rem;
+  }
+  .memo-label { display: block; margin-top: 1rem; font-weight: 600; }
+
+  /* 퀴즈 화면 */
+  .quiz { max-width: 860px; margin: 0 auto; }
+  .quiz-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; }
+  .dots { display: flex; gap: .35rem; }
+  .dot { width: .85rem; height: .85rem; border-radius: 50%; background: #d9dee8; }
+  .dot.current { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .dot.right { background: var(--good); }
+  .dot.wrong { background: var(--bad); }
+  .q-tag { display: inline-block; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .8rem; padding: .1rem .6rem; border-radius: 999px; }
+  .q-text { font-size: 1.3rem; font-weight: 700; margin: .5rem 0 1rem; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .option {
+    text-align: left; border: 2px solid var(--line); background: #fff;
+    padding: .7rem 1rem; border-radius: .6rem;
+  }
+  .option:hover:not(:disabled) { border-color: var(--accent); }
+  .option:disabled { cursor: default; }
+  .option.right { border-color: var(--good); background: var(--good-soft); }
+  .option.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .feedback { margin-top: 1rem; padding: .8rem 1rem; border-radius: .6rem; }
+  .feedback.right { background: var(--good-soft); }
+  .feedback.wrong { background: var(--bad-soft); }
+  .feedback strong { display: block; margin-bottom: .2rem; }
+  .quiz-nav { display: flex; justify-content: space-between; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .result-score { font-size: 2rem; font-weight: 800; margin: .3rem 0 1rem; }
+  .result-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+  .result-list li { padding: .45rem 0; border-bottom: 1px solid var(--line); }
+  .mark-right { color: var(--good); font-weight: 800; }
+  .mark-wrong { color: var(--bad); font-weight: 800; }
+
+  @media (max-width: 900px) {
+    .lab { grid-template-columns: 1fr; }
+    .options { grid-template-columns: 1fr; }
+    header { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 효소 반응 모의 실험실</h1>
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-lab" data-tab="lab">실험</button>
+    <button class="tab" role="tab" id="tab-quiz" data-tab="quiz">퀴즈</button>
+  </nav>
+  <button class="big-btn" id="bigBtn" type="button">크게 보기</button>
+</header>
+
+<main>
+  <!-- ===== 실험 화면 ===== -->
+  <section id="view-lab" role="tabpanel">
+    <div class="lab">
+      <div class="panel">
+        <h2>조건 설정</h2>
+
+        <div class="control">
+          <div class="control-head"><label for="enzyme">효소</label></div>
+          <select id="enzyme"></select>
+          <div class="hint" id="enzymeHint"></div>
+        </div>
+
+        <div class="control">
+          <div class="control-head"><label for="T">온도</label><output id="T-out"></output></div>
+          <input type="range" id="T" min="0" max="80" step="1">
+        </div>
+
+        <div class="control">
+          <div class="control-head"><label for="pH">pH</label><output id="pH-out"></output></div>
+          <input type="range" id="pH" min="1" max="14" step="0.5">
+        </div>
+
+        <div class="control">
+          <div class="control-head"><label for="S">기질 농도</label><output id="S-out"></output></div>
+          <input type="range" id="S" min="0" max="100" step="1">
+        </div>
+
+        <div class="control">
+          <div class="control-head"><label for="E">효소 농도</label><output id="E-out"></output></div>
+          <input type="range" id="E" min="1" max="5" step="1">
+        </div>
+
+        <div class="control">
+          <div class="control-head"><span>저해제</span></div>
+          <div class="radios" id="inhGroup">
+            <label><input type="radio" name="inh" value="none"><span>없음</span></label>
+            <label><input type="radio" name="inh" value="comp"><span>경쟁적 저해제<span class="hint">활성 부위를 두고 기질과 경쟁</span></span></label>
+            <label><input type="radio" name="inh" value="noncomp"><span>비경쟁적 저해제<span class="hint">활성 부위가 아닌 곳에 결합</span></span></label>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn primary" id="recordBtn" type="button">기록</button>
+          <button class="btn" id="defaultBtn" type="button">조건 기본값</button>
+        </div>
+        <div class="status" id="status" role="status"></div>
+      </div>
+
+      <div class="panel graph-panel">
+        <div class="graph-head">
+          <h2>그래프</h2>
+          <span class="hint">x축:</span>
+          <div class="axis-pick" id="axisPick"></div>
+        </div>
+        <p class="graph-note" id="graphNote"></p>
+        <div class="canvas-wrap"><canvas id="chart" aria-label="반응 속도 그래프"></canvas></div>
+        <div class="rate">
+          <span class="rate-label">현재 반응 속도</span>
+          <span class="rate-value" id="rateValue">0</span>
+          <div class="bar"><div id="rateBar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel records">
+      <div class="records-head">
+        <h2>실험 기록표</h2>
+        <span class="hint"><span class="legend-changed"></span>이전 줄과 달라진 조건 · 최대 10줄</span>
+        <button class="btn" id="clearBtn" type="button" style="margin-left:auto">기록 초기화</button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>#</th><th>효소</th><th>온도(℃)</th><th>pH</th><th>기질 농도</th><th>효소 농도</th><th>저해제</th><th>반응 속도</th><th>변인 통제</th></tr>
+          </thead>
+          <tbody id="recordBody"></tbody>
+        </table>
+      </div>
+      <label class="memo-label" for="memo">관찰 메모</label>
+      <textarea id="memo" placeholder="예: 다른 조건은 같게 두고 온도만 바꿨더니 37℃에서 반응 속도가 가장 빨랐고, 60℃에서는 거의 0이 되었다."></textarea>
+    </div>
+  </section>
+
+  <!-- ===== 퀴즈 화면 ===== -->
+  <section id="view-quiz" role="tabpanel" hidden>
+    <div class="panel quiz" id="quizBox"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- 데이터 ---------- */
+  const ENZ = {
+    amylase: { name: '아밀레이스', optT: 37, optPH: 7, desc: '침·이자액 · 녹말 분해 · 최적 pH 7' },
+    pepsin:  { name: '펩신',       optT: 37, optPH: 2, desc: '위액 · 단백질 분해 · 최적 pH 2' },
+    trypsin: { name: '트립신',     optT: 37, optPH: 8, desc: '이자액 · 단백질 분해 · 최적 pH 8' }
+  };
+  const INH = { none: '없음', comp: '경쟁적', noncomp: '비경쟁적' };
+  const AXES = {
+    T:  { label: '온도',      unit: '℃',  min: 0, max: 80,  ticks: [0, 10, 20, 30, 40, 50, 60, 70, 80] },
+    pH: { label: 'pH',        unit: '',   min: 1, max: 14,  ticks: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] },
+    S:  { label: '기질 농도', unit: '',   min: 0, max: 100, ticks: [0, 20, 40, 60, 80, 100] },
+    E:  { label: '효소 농도', unit: '단계', min: 0, max: 5,  ticks: [0, 1, 2, 3, 4, 5] }
+  };
+  const DEFAULT_COND = { enzyme: 'amylase', T: 37, pH: 7, S: 50, E: 3, inh: 'none' };
+  const MAX_RECORDS = 10;
+  const COND_KEYS = ['enzyme', 'T', 'pH', 'S', 'E', 'inh'];
+
+  const QUIZ = [
+    {
+      tag: '온도',
+      q: '아밀레이스 반응을 37℃에서 60℃로 옮기면 반응 속도는 어떻게 될까?',
+      options: ['더 빨라진다', '거의 0에 가깝게 느려진다', '변화가 없다', '정확히 2배가 된다'],
+      answer: 1,
+      explain: '효소는 단백질이라 최적 온도(약 37℃)보다 크게 높아지면 입체 구조가 바뀌는 변성이 일어나 활성을 잃어요.',
+      setup: { cond: { enzyme: 'amylase', T: 60 }, x: 'T' }
+    },
+    {
+      tag: 'pH',
+      q: '위액 속 펩신이 가장 잘 작용하는 pH는 어느 것일까?',
+      options: ['pH 2', 'pH 7', 'pH 8', 'pH 12'],
+      answer: 0,
+      explain: '효소마다 최적 pH가 달라요. 펩신은 강한 산성인 위 속(pH 2 부근)에서, 아밀레이스는 중성(pH 7) 부근에서 가장 잘 작용해요.',
+      setup: { cond: { enzyme: 'pepsin', pH: 2 }, x: 'pH' }
+    },
+    {
+      tag: '기질 농도',
+      q: '효소의 양이 일정할 때 기질 농도를 계속 높이면 반응 속도는 어떻게 될까?',
+      options: ['기질 농도에 비례해 끝없이 증가한다', '증가하다가 어느 순간부터 거의 일정해진다', '오히려 감소한다', '처음부터 변화가 없다'],
+      answer: 1,
+      explain: '기질이 많아지면 속도가 빨라지지만, 모든 효소의 활성 부위가 기질과 결합해 있으면(포화) 더 이상 빨라지지 않아요.',
+      setup: { cond: { enzyme: 'amylase', S: 80 }, x: 'S' }
+    },
+    {
+      tag: '효소 농도',
+      q: '기질 농도가 같을 때 효소 농도를 2배로 늘리면 반응 속도는 어떻게 될까?',
+      options: ['변화가 없다', '약 2배가 된다', '절반이 된다', '0이 된다'],
+      answer: 1,
+      explain: '기질이 충분할 때 효소가 많을수록 동시에 일하는 활성 부위가 많아지므로, 반응 속도는 효소 농도에 비례해 커져요.',
+      setup: { cond: { enzyme: 'amylase', S: 50, E: 2 }, x: 'E' }
+    },
+    {
+      tag: '저해제',
+      q: '경쟁적 저해제가 있을 때 기질 농도를 크게 높이면 반응 속도는 어떻게 될까?',
+      options: ['저해제가 없을 때의 속도에 가까워진다', '0이 된다', '저해제가 없을 때보다 더 빨라진다', '기질 농도와 상관없이 항상 절반이다'],
+      answer: 0,
+      explain: '경쟁적 저해제는 기질과 활성 부위를 두고 경쟁해요. 기질이 아주 많아지면 기질이 경쟁에서 이겨 속도가 회복돼요. (비경쟁적 저해제는 기질을 늘려도 회복되지 않아요.)',
+      setup: { cond: { enzyme: 'amylase', S: 100, inh: 'comp' }, x: 'S' }
+    }
+  ];
+
+  /* ---------- 계산 모델 (교육용 단순화) ---------- */
+  function rate(c) {
+    const z = ENZ[c.enzyme];
+    const dT = c.T - z.optT;
+    const fT = dT <= 0 ? Math.exp(-Math.pow(dT / 20, 2))   // 저온: 천천히 감소
+                       : Math.exp(-Math.pow(dT / 10, 2));  // 고온: 변성으로 급감
+    const fP = Math.exp(-Math.pow((c.pH - z.optPH) / 1.5, 2));
+    // 기질 포화: 1 - e^(-S/k). k가 클수록 천천히 포화된다.
+    let k = 10;
+    let Vmax = 20 * c.E;
+    if (c.inh === 'comp') k *= 2.5;         // 경쟁적: 포화가 늦어질 뿐 최대 속도는 같다 → 기질이 많으면 회복
+    if (c.inh === 'noncomp') Vmax *= 0.5;   // 비경쟁적: 최대 속도 자체가 낮아진다 → 회복되지 않음
+    return Vmax * fT * fP * (1 - Math.exp(-c.S / k));
+  }
+
+  /* ---------- 상태 & 저장 ---------- */
+  const STORE_KEY = 'enzyme-lab-v1';
+  const state = {
+    cond: Object.assign({}, DEFAULT_COND),
+    xAxis: 'T',
+    records: [],
+    memo: '',
+    tab: 'lab',
+    big: false,
+    quiz: { i: 0, answers: [] }
+  };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.cond) Object.assign(state.cond, s.cond);
+      if (AXES[s.xAxis]) state.xAxis = s.xAxis;
+      if (Array.isArray(s.records)) state.records = s.records.slice(0, MAX_RECORDS);
+      if (typeof s.memo === 'string') state.memo = s.memo;
+      if (s.tab === 'quiz' || s.tab === 'lab') state.tab = s.tab;
+      state.big = !!s.big;
+      if (s.quiz && Array.isArray(s.quiz.answers)) {
+        state.quiz.answers = s.quiz.answers.slice(0, QUIZ.length);
+        state.quiz.i = Math.min(Math.max(0, s.quiz.i | 0), QUIZ.length);
+      }
+      if (!ENZ[state.cond.enzyme]) state.cond.enzyme = DEFAULT_COND.enzyme;
+      if (!INH[state.cond.inh]) state.cond.inh = DEFAULT_COND.inh;
+    } catch (e) { /* 저장소를 쓸 수 없으면 기본값으로 시작 */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* 무시 */ }
+  }
+
+  /* ---------- DOM ---------- */
+  const $ = (id) => document.getElementById(id);
+  const fmt = (v) => (Math.round(v * 10) / 10).toFixed(1);
+  const fmtCond = {
+    enzyme: (v) => ENZ[v].name,
+    T: (v) => v + '℃',
+    pH: (v) => String(v),
+    S: (v) => String(v),
+    E: (v) => v + '단계',
+    inh: (v) => INH[v]
+  };
+
+  // 효소 목록
+  Object.keys(ENZ).forEach((k) => {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = ENZ[k].name;
+    $('enzyme').appendChild(o);
+  });
+
+  // x축 버튼
+  Object.keys(AXES).forEach((k) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.dataset.axis = k; b.textContent = AXES[k].label;
+    b.addEventListener('click', () => { state.xAxis = k; save(); renderLab(); });
+    $('axisPick').appendChild(b);
+  });
+
+  // 입력 이벤트
+  $('enzyme').addEventListener('change', (e) => { state.cond.enzyme = e.target.value; changed(); });
+  ['T', 'pH', 'S', 'E'].forEach((k) => {
+    $(k).addEventListener('input', (e) => { state.cond[k] = Number(e.target.value); changed(); });
+  });
+  document.querySelectorAll('input[name="inh"]').forEach((r) => {
+    r.addEventListener('change', (e) => { state.cond.inh = e.target.value; changed(); });
+  });
+  function changed() { setStatus(''); save(); renderLab(); }
+
+  $('recordBtn').addEventListener('click', () => {
+    if (state.records.length >= MAX_RECORDS) {
+      setStatus('기록은 최대 ' + MAX_RECORDS + '줄까지 가능해요. [기록 초기화] 후 다시 기록하세요.');
+      return;
+    }
+    state.records.push(Object.assign({}, state.cond, { rate: Math.round(rate(state.cond) * 10) / 10 }));
+    setStatus('');
+    save(); renderRecords();
+  });
+  $('defaultBtn').addEventListener('click', () => {
+    state.cond = Object.assign({}, DEFAULT_COND);
+    changed();
+  });
+  $('clearBtn').addEventListener('click', () => {
+    if (!state.records.length) return;
+    if (!confirm('실험 기록표를 모두 지울까요?')) return;
+    state.records = [];
+    setStatus('');
+    save(); renderRecords();
+  });
+  $('memo').addEventListener('input', (e) => { state.memo = e.target.value; save(); });
+
+  document.querySelectorAll('.tab').forEach((t) => {
+    t.addEventListener('click', () => { state.tab = t.dataset.tab; save(); renderTab(); });
+  });
+  $('bigBtn').addEventListener('click', () => { state.big = !state.big; save(); renderBig(); });
+
+  function setStatus(msg) { $('status').textContent = msg; }
+
+  /* ---------- 렌더링: 실험 ---------- */
+  function renderLab() {
+    const c = state.cond;
+    $('enzyme').value = c.enzyme;
+    $('enzymeHint').textContent = ENZ[c.enzyme].desc;
+    ['T', 'pH', 'S', 'E'].forEach((k) => {
+      $(k).value = c[k];
+      $(k + '-out').textContent = fmtCond[k](c[k]);
+    });
+    document.querySelectorAll('input[name="inh"]').forEach((r) => { r.checked = r.value === c.inh; });
+    document.querySelectorAll('#axisPick button').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.axis === state.xAxis));
+    });
+
+    const others = COND_KEYS.filter((k) => k !== state.xAxis && k !== 'enzyme' && k !== 'inh')
+      .map((k) => AXES[k].label + ' ' + fmtCond[k](c[k]));
+    $('graphNote').textContent = ENZ[c.enzyme].name + ' · 고정 조건: ' + others.join(', ') +
+      ' · 저해제 ' + INH[c.inh] + ' → ' + AXES[state.xAxis].label + '만 바꿔 가며 그린 곡선';
+
+    const r = rate(c);
+    $('rateValue').textContent = fmt(r);
+    $('rateBar').style.width = Math.min(100, r) + '%';
+    drawChart();
+  }
+
+  function drawChart() {
+    const cv = $('chart');
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h) return;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const css = getComputedStyle(document.documentElement);
+    const col = (n) => css.getPropertyValue(n).trim();
+    const fs = parseFloat(css.fontSize);
+    const small = Math.round(fs * 0.78);
+    const font = (size, weight) => (weight || '') + ' ' + size + 'px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+
+    const ax = AXES[state.xAxis];
+    const pad = { l: fs * 3.3, r: fs * 1.2, t: fs * 2.2, b: fs * 2.9 };
+    const pw = w - pad.l - pad.r, ph = h - pad.t - pad.b;
+    const X = (v) => pad.l + (v - ax.min) / (ax.max - ax.min) * pw;
+    const Y = (v) => pad.t + ph - Math.min(v, 100) / 100 * ph;
+
+    // 격자 & 눈금
+    ctx.lineWidth = 1;
+    ctx.font = font(small);
+    ctx.fillStyle = col('--muted');
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let v = 0; v <= 100; v += 20) {
+      ctx.strokeStyle = v === 0 ? col('--ink') : col('--line');
+      ctx.beginPath(); ctx.moveTo(pad.l, Y(v)); ctx.lineTo(pad.l + pw, Y(v)); ctx.stroke();
+      ctx.fillText(String(v), pad.l - 8, Y(v));
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ax.ticks.forEach((t) => {
+      ctx.strokeStyle = col('--ink');
+      ctx.beginPath(); ctx.moveTo(X(t), pad.t + ph); ctx.lineTo(X(t), pad.t + ph + 5); ctx.stroke();
+      ctx.fillText(String(t), X(t), pad.t + ph + 8);
+    });
+    ctx.strokeStyle = col('--ink');
+    ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph); ctx.stroke();
+
+    // 축 이름
+    ctx.fillStyle = col('--ink');
+    ctx.font = font(small, '600');
+    ctx.fillText(ax.label + (ax.unit ? ' (' + ax.unit + ')' : ''), pad.l + pw / 2, pad.t + ph + 8 + small * 1.4);
+    ctx.save();
+    ctx.translate(fs * 0.9, pad.t + ph / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('반응 속도 (상대값)', 0, 0);
+    ctx.restore();
+
+    // 최적값 표시
+    const z = ENZ[state.cond.enzyme];
+    const opt = state.xAxis === 'T' ? z.optT : state.xAxis === 'pH' ? z.optPH : null;
+    if (opt !== null) {
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = col('--ref');
+      ctx.beginPath(); ctx.moveTo(X(opt), pad.t); ctx.lineTo(X(opt), pad.t + ph); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col('--muted'); ctx.font = font(small);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+      ctx.fillText('최적 ' + (state.xAxis === 'T' ? opt + '℃' : 'pH ' + opt), X(opt) + 5, pad.t + 2);
+    }
+
+    // 곡선
+    function curve(cond, color, dash, width) {
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
+      ctx.beginPath();
+      const N = 240;
+      for (let i = 0; i <= N; i++) {
+        const xv = ax.min + (ax.max - ax.min) * i / N;
+        const c = Object.assign({}, cond); c[state.xAxis] = xv;
+        const px = X(xv), py = Y(rate(c));
+        i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    const hasInh = state.cond.inh !== 'none';
+    if (hasInh) curve(Object.assign({}, state.cond, { inh: 'none' }), col('--ref'), [7, 5], 2);
+    curve(state.cond, col('--accent'), [], 3);
+
+    // 경쟁적 저해: 기질이 많아지면 속도가 회복됨을 표시
+    if (state.cond.inh === 'comp' && state.xAxis === 'S') {
+      const top = rate(Object.assign({}, state.cond, { S: ax.max, inh: 'none' }));
+      ctx.fillStyle = col('--accent'); ctx.font = font(small, '700');
+      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+      ctx.fillText('기질이 많아지면 속도 회복 → 두 곡선이 만남', X(ax.max) - 4, Y(top) - 8);
+    }
+
+    // 효소 농도 축: 단계별 점
+    if (state.xAxis === 'E') {
+      ctx.fillStyle = col('--accent');
+      for (let e = 1; e <= 5; e++) {
+        const c = Object.assign({}, state.cond, { E: e });
+        ctx.beginPath(); ctx.arc(X(e), Y(rate(c)), 4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // 현재 조건 점
+    const cx = X(state.cond[state.xAxis]), cy = Y(rate(state.cond));
+    ctx.fillStyle = col('--point'); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.font = font(small, '700'); ctx.textBaseline = 'bottom';
+    const label = fmt(rate(state.cond));
+    ctx.textAlign = cx > pad.l + pw - 60 ? 'right' : 'left';
+    ctx.fillText(label, cx + (ctx.textAlign === 'left' ? 10 : -10), cy - 6);
+
+    // 범례
+    ctx.font = font(small); ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    let lx = pad.l + 4; const ly = fs * 0.8;
+    function legend(color, dash, text, dot) {
+      if (dot) {
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx + 12, ly, 6, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.setLineDash(dash);
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 24, ly); ctx.stroke(); ctx.setLineDash([]);
+      }
+      ctx.fillStyle = col('--ink'); ctx.fillText(text, lx + 30, ly);
+      lx += 30 + ctx.measureText(text).width + 18;
+    }
+    legend(col('--accent'), [], '현재 조건 곡선');
+    if (hasInh) legend(col('--ref'), [7, 5], '저해제 없을 때');
+    legend(col('--point'), [], '현재 조건', true);
+  }
+
+  function renderRecords() {
+    const body = $('recordBody');
+    body.innerHTML = '';
+    if (!state.records.length) {
+      body.innerHTML = '<tr><td colspan="9" class="empty">아직 기록이 없어요. 조건을 정하고 [기록]을 눌러 보세요.</td></tr>';
+    }
+    state.records.forEach((r, i) => {
+      const prev = state.records[i - 1];
+      const tr = document.createElement('tr');
+      const td = (text, cls) => {
+        const d = document.createElement('td'); d.textContent = text; if (cls) d.className = cls; tr.appendChild(d);
+      };
+      td(String(i + 1));
+      let diff = 0;
+      COND_KEYS.forEach((k) => {
+        const isChanged = prev && prev[k] !== r[k];
+        if (isChanged) diff++;
+        td(k === 'T' ? String(r[k]) : k === 'E' ? String(r[k]) : fmtCond[k](r[k]), isChanged ? 'changed' : '');
+      });
+      td(fmt(r.rate));
+      if (!prev) td('기준', '');
+      else if (diff === 0) td('변화 없음', 'note-warn');
+      else if (diff === 1) td('✔ 1개만 바꿈', 'note-ok');
+      else td('⚠ ' + diff + '개 바꿈', 'note-warn');
+      body.appendChild(tr);
+    });
+    $('recordBtn').disabled = false;
+  }
+
+  /* ---------- 렌더링: 퀴즈 ---------- */
+  function renderQuiz() {
+    const box = $('quizBox');
+    const qs = state.quiz;
+    box.innerHTML = '';
+
+    if (qs.i >= QUIZ.length) {
+      const score = QUIZ.filter((q, i) => qs.answers[i] === q.answer).length;
+      box.innerHTML =
+        '<h2>퀴즈 결과</h2>' +
+        '<div class="result-score">' + QUIZ.length + '문항 중 ' + score + '개 정답</div>' +
+        '<ul class="result-list">' + QUIZ.map((q, i) => {
+          const ok = qs.answers[i] === q.answer;
+          return '<li><span class="' + (ok ? 'mark-right">✔' : 'mark-wrong">✘') + '</span> ' +
+            (i + 1) + '. [' + q.tag + '] ' + escapeHtml(q.q) +
+            (ok ? '' : ' <span class="hint">— 정답: ' + escapeHtml(q.options[q.answer]) + '</span>') + '</li>';
+        }).join('') + '</ul>' +
+        '<div class="btn-row"><button class="btn primary" id="retryBtn" type="button">다시 풀기</button>' +
+        '<button class="btn" id="toLabBtn" type="button">실험하러 가기</button></div>';
+      $('retryBtn').addEventListener('click', () => { state.quiz = { i: 0, answers: [] }; save(); renderQuiz(); });
+      $('toLabBtn').addEventListener('click', () => { state.tab = 'lab'; save(); renderTab(); });
+      return;
+    }
+
+    const q = QUIZ[qs.i];
+    const chosen = qs.answers[qs.i];
+    const answered = chosen !== undefined && chosen !== null;
+
+    const top = document.createElement('div');
+    top.className = 'quiz-top';
+    top.innerHTML = '<span><strong>문항 ' + (qs.i + 1) + ' / ' + QUIZ.length + '</strong></span>';
+    const dots = document.createElement('div');
+    dots.className = 'dots';
+    QUIZ.forEach((qq, i) => {
+      const d = document.createElement('span');
+      const a = qs.answers[i];
+      d.className = 'dot' + (i === qs.i ? ' current' : '') +
+        (a === undefined || a === null ? '' : a === qq.answer ? ' right' : ' wrong');
+      dots.appendChild(d);
+    });
+    top.appendChild(dots);
+    box.appendChild(top);
+
+    const tag = document.createElement('span');
+    tag.className = 'q-tag'; tag.textContent = q.tag;
+    box.appendChild(tag);
+    const text = document.createElement('div');
+    text.className = 'q-text'; text.textContent = q.q;
+    box.appendChild(text);
+
+    const opts = document.createElement('div');
+    opts.className = 'options';
+    q.options.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'option';
+      b.textContent = '①②③④'[i] + ' ' + o;
+      if (answered) {
+        b.disabled = true;
+        if (i === q.answer) b.classList.add('right');
+        else if (i === chosen) b.classList.add('wrong');
+      }
+      b.addEventListener('click', () => { qs.answers[qs.i] = i; save(); renderQuiz(); });
+      opts.appendChild(b);
+    });
+    box.appendChild(opts);
+
+    if (answered) {
+      const ok = chosen === q.answer;
+      const fb = document.createElement('div');
+      fb.className = 'feedback ' + (ok ? 'right' : 'wrong');
+      fb.innerHTML = '<strong>' + (ok ? '✔ 정답!' : '✘ 아쉬워요. 정답은 ' + '①②③④'[q.answer] + '번') + '</strong>';
+      fb.appendChild(document.createTextNode(q.explain));
+      box.appendChild(fb);
+    }
+
+    const nav = document.createElement('div');
+    nav.className = 'quiz-nav';
+    const left = document.createElement('div'); left.className = 'btn-row';
+    const right = document.createElement('div'); right.className = 'btn-row';
+
+    const prev = document.createElement('button');
+    prev.type = 'button'; prev.className = 'btn'; prev.textContent = '← 이전';
+    prev.disabled = qs.i === 0;
+    prev.addEventListener('click', () => { qs.i--; save(); renderQuiz(); });
+    left.appendChild(prev);
+
+    if (answered) {
+      const tryBtn = document.createElement('button');
+      tryBtn.type = 'button'; tryBtn.className = 'btn'; tryBtn.textContent = '🔬 실험해 보기';
+      tryBtn.addEventListener('click', () => {
+        state.cond = Object.assign({}, DEFAULT_COND, q.setup.cond);
+        state.xAxis = q.setup.x;
+        state.tab = 'lab';
+        setStatus('');
+        save(); renderTab();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      left.appendChild(tryBtn);
+    }
+
+    const next = document.createElement('button');
+    next.type = 'button'; next.className = 'btn primary';
+    next.textContent = qs.i === QUIZ.length - 1 ? '결과 보기' : '다음 문항 →';
+    next.disabled = !answered;
+    next.addEventListener('click', () => { qs.i++; save(); renderQuiz(); });
+    right.appendChild(next);
+
+    nav.appendChild(left); nav.appendChild(right);
+    box.appendChild(nav);
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  /* ---------- 공통 ---------- */
+  function renderTab() {
+    const isLab = state.tab === 'lab';
+    $('view-lab').hidden = !isLab;
+    $('view-quiz').hidden = isLab;
+    $('tab-lab').setAttribute('aria-selected', String(isLab));
+    $('tab-quiz').setAttribute('aria-selected', String(!isLab));
+    if (isLab) renderLab(); else renderQuiz();
+  }
+  function renderBig() {
+    document.documentElement.classList.toggle('big', state.big);
+    $('bigBtn').textContent = state.big ? '기본 크기' : '크게 보기';
+    if (state.tab === 'lab') drawChart();
+  }
+
+  load();
+  $('memo').value = state.memo;
+  renderBig();
+  renderRecords();
+  renderTab();
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (state.tab === 'lab') drawChart(); }, 80);
+  });
+})();
+</script>
+</body>
+</html>
