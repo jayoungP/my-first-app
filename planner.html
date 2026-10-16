@@ -47,6 +47,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     background: var(--bg); color: var(--ink);
     font-family: var(--font-body); font-size: 15px; line-height: 1.5;
@@ -75,7 +76,44 @@
 
   /* 달력 */
   .cal { padding: 16px; }
-  .cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .cal-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+  @media (max-width: 560px) { .cal-head h2 { flex: 1 0 100%; } }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; background: var(--paper); padding: 0 14px; height: 34px; font-weight: 600; color: var(--muted); }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--paper); }
+
+  /* 주간 보기: 하루 한 줄 — 날짜 | 일정 | 다이어리 */
+  .week { display: grid; }
+  .wk-row {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1.15fr); gap: 10px;
+    padding: 10px 6px; border-top: 1px solid var(--line); align-items: start;
+  }
+  .wk-row.sel { background: var(--accent-soft); border-radius: 8px; box-shadow: inset 0 0 0 2px var(--accent); }
+  .wk-date {
+    border: 0; background: none; padding: 2px 0; text-align: left; display: grid; gap: 1px; border-radius: 6px;
+  }
+  .wk-dow { font-size: .78rem; font-weight: 600; color: var(--muted); }
+  .wk-num { font-family: var(--font-num); font-size: 1.3rem; line-height: 1.1; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; margin-left: -4px; }
+  .wk-row.sun .wk-dow, .wk-row.sun .wk-num, .wk-row.hol .wk-num, .wk-row.hol .wk-dow { color: var(--sun); }
+  .wk-row.sat:not(.hol) .wk-dow, .wk-row.sat:not(.hol) .wk-num { color: var(--sat); }
+  .wk-row.today .wk-num { background: var(--today); color: var(--paper); }
+  .wk-date .hol-name { display: block; }
+  .wk-items { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .wk-items .chip { display: block; white-space: normal; overflow: visible; font-size: .78rem; padding: 2px 6px; }
+  .wk-items .none, .wk-items .todo-sum { font-size: .78rem; color: var(--muted); }
+  @media (max-width: 640px) {
+    .wk-row { grid-template-columns: 52px minmax(0, 1fr); }
+    .wk-row .diary { grid-column: 2; }
+  }
+  textarea.diary {
+    width: 100%; min-width: 0; resize: vertical; border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 9px; background: var(--bg); font-size: .88rem; line-height: 1.55; min-height: 64px;
+    font-family: var(--font-body);
+  }
+  textarea.diary:focus { background: var(--paper); }
+  .dnum-wrap { display: flex; align-items: center; gap: 2px; }
+  .dia { font-size: .7rem; color: var(--muted); }
   .cal-head h2 { margin: 0 auto 0 0; font-size: 1.25rem; font-weight: 700; }
   .cal-head h2 .num { font-family: var(--font-num); }
   .icon-btn {
@@ -115,7 +153,8 @@
   }
 
   /* 날짜 패널 */
-  .side { padding: 18px; display: grid; gap: 18px; }
+  .side { padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .side > * { min-width: 0; }
   .side-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .side-head h2 { margin: 0; font-family: var(--font-display); font-size: 1.45rem; }
   .side-head .sub { color: var(--muted); font-size: .9rem; }
@@ -218,12 +257,16 @@
       <div class="cal">
         <div class="cal-head">
           <h2 id="monthTitle"></h2>
-          <button class="icon-btn" id="prev" aria-label="이전 달">‹</button>
+          <div class="seg" role="group" aria-label="보기">
+            <button type="button" id="vMonth">월</button><button type="button" id="vWeek">주</button>
+          </div>
+          <button class="icon-btn" id="prev" aria-label="이전">‹</button>
           <button class="icon-btn" id="goToday">오늘</button>
-          <button class="icon-btn" id="next" aria-label="다음 달">›</button>
+          <button class="icon-btn" id="next" aria-label="다음">›</button>
         </div>
         <div class="grid" id="dows"></div>
         <div class="grid" id="days"></div>
+        <div class="week" id="week" hidden></div>
       </div>
       <div class="legend" id="legend"></div>
       <div style="height:14px"></div>
@@ -249,6 +292,11 @@
           <input id="quickInput" placeholder="할 일을 적고 Enter" autocomplete="off" maxlength="120">
           <button class="add-btn" type="submit">추가</button>
         </form>
+      </section>
+
+      <section>
+        <div class="sec-title"><h3>다이어리</h3><span class="sub" id="diaryState"></span></div>
+        <textarea class="diary" id="sideDiary" rows="4" maxlength="2000" placeholder="오늘 있었던 일, 기억하고 싶은 것을 짧게 적어 보세요."></textarea>
       </section>
     </aside>
   </div>
@@ -466,6 +514,29 @@
     } catch { /* 이 기기 저장으로 계속 */ }
   }
 
+  // ---------- 다이어리: 날짜마다 한 문서(id "diary-날짜"), 입력이 멈추면 저장 ----------
+  const diaryOf = k => items.find(x => x.kind === "diary" && x.date === k)?.text || "";
+  const diaryTimers = new Map();
+  function saveDiary(k, text) {
+    clearTimeout(diaryTimers.get(k)); diaryTimers.delete(k);
+    if (text === diaryOf(k)) { $("diaryState").textContent = text ? "저장됨" : ""; return; }
+    const id = "diary-" + k;
+    if (!text.trim()) { if (items.some(x => x.id === id)) removeItem(id); }
+    else putItem({ id, kind: "diary", date: k, text, updatedAt: Date.now() });
+    $("diaryState").textContent = text.trim() ? "저장됨" : "";
+  }
+  // 입력 중인 칸은 다시 그릴 때 건드리지 않는다
+  function bindDiary(ta, getKey) {
+    ta.addEventListener("input", () => {
+      const k = getKey();
+      clearTimeout(diaryTimers.get(k));
+      diaryTimers.set(k, setTimeout(() => saveDiary(k, ta.value), 700));
+      $("diaryState").textContent = "입력 중…";
+    });
+    ta.addEventListener("blur", () => { const k = getKey(); if (diaryTimers.has(k)) saveDiary(k, ta.value); });
+  }
+  const fillDiary = (ta, k) => { if (document.activeElement !== ta) ta.value = diaryOf(k); };
+
   // ---------- 일정 반복 계산 ----------
   const isSpan = ev => !!ev.endDate && ev.endDate > ev.date;
   function occursOn(ev, k) {
@@ -493,7 +564,66 @@
   let view = new Date(); view.setDate(1);
   let sel = todayKey();
 
-  function render() { renderCal(); renderSide(); }
+  const VIEW_KEY = "haru-planner-view";
+  let mode = "month";
+  try { if (localStorage.getItem(VIEW_KEY) === "week") mode = "week"; } catch {}
+  const addDays = (k, n) => { const d = parse(k); d.setDate(d.getDate() + n); return key(d); };
+
+  function render() {
+    $("vMonth").setAttribute("aria-pressed", mode === "month");
+    $("vWeek").setAttribute("aria-pressed", mode === "week");
+    $("dows").hidden = $("days").hidden = mode === "week";
+    $("week").hidden = mode !== "week";
+    if (mode === "week") renderWeek(); else renderCal();
+    renderSide();
+  }
+
+  function renderWeek() {
+    const s0 = parse(sel);
+    const startK = addDays(sel, -s0.getDay());
+    const a = parse(startK), z = parse(addDays(startK, 6));
+    $("monthTitle").innerHTML = `<span class="num">${a.getMonth() + 1}.${a.getDate()}</span> ~ <span class="num">${z.getMonth() + 1}.${z.getDate()}</span>`;
+    const box = $("week");
+    if (box.dataset.wk !== startK) {
+      box.dataset.wk = startK; box.textContent = "";
+      for (let i = 0; i < 7; i++) {
+        const k = addDays(startK, i), d = parse(k);
+        const row = document.createElement("div"); row.className = "wk-row"; row.dataset.k = k;
+        const btn = document.createElement("button"); btn.type = "button"; btn.className = "wk-date";
+        btn.innerHTML = `<span class="wk-dow">${DOW[d.getDay()]}</span><span class="wk-num">${d.getDate()}</span>`;
+        if (HOLIDAYS[k]) { const h = document.createElement("span"); h.className = "hol-name"; h.textContent = HOLIDAYS[k]; btn.append(h); }
+        btn.setAttribute("aria-label", `${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일 고르기`);
+        btn.addEventListener("click", () => { sel = k; render(); });
+        btn.addEventListener("dblclick", () => openEditor(null, k));
+        const list = document.createElement("div"); list.className = "wk-items";
+        list.addEventListener("dblclick", () => openEditor(null, k));
+        const ta = document.createElement("textarea"); ta.className = "diary"; ta.id = "diary-" + k; ta.rows = 2; ta.maxLength = 2000;
+        ta.placeholder = "다이어리"; ta.setAttribute("aria-label", `${d.getMonth() + 1}월 ${d.getDate()}일 다이어리`);
+        ta.addEventListener("focus", () => { if (sel !== k) { sel = k; render(); } });
+        bindDiary(ta, () => k);
+        row.append(btn, list, ta); box.append(row);
+      }
+    }
+    const tk = todayKey();
+    box.querySelectorAll(".wk-row").forEach(row => {
+      const k = row.dataset.k, d = parse(k);
+      row.className = "wk-row" + (d.getDay() === 0 ? " sun" : d.getDay() === 6 ? " sat" : "")
+        + (HOLIDAYS[k] ? " hol" : "") + (k === tk ? " today" : "") + (k === sel ? " sel" : "");
+      const list = row.querySelector(".wk-items"); list.textContent = "";
+      schoolOn(k).forEach(([, t, ty]) => {
+        const c = document.createElement("span"); c.className = "chip sc"; c.style.setProperty("--c", `var(${SCHOOL_TYPE[ty].v})`);
+        c.textContent = t; list.append(c);
+      });
+      eventsOn(k).forEach(ev => {
+        const c = document.createElement("span"); c.className = "chip"; c.style.setProperty("--c", catColor(ev.cat));
+        c.textContent = (isSpan(ev) && k > ev.date ? "↳ " : ev.start ? ev.start + " " : "") + ev.title; list.append(c);
+      });
+      const left = todosOn(k).filter(t => !t.done).length;
+      if (left) { const t = document.createElement("span"); t.className = "todo-sum"; t.textContent = `할 일 ${left}개 남음`; list.append(t); }
+      if (!list.childElementCount) { const n = document.createElement("span"); n.className = "none"; n.textContent = "—"; list.append(n); }
+      fillDiary(row.querySelector("textarea"), k);
+    });
+  }
 
   function renderCal() {
     const y = view.getFullYear(), m = view.getMonth();
@@ -516,7 +646,9 @@
       if (k === sel) b.classList.add("sel");
       const evs = eventsOn(k), tds = todosOn(k), sch = schoolOn(k);
       b.setAttribute("aria-label", `${d.getMonth() + 1}월 ${d.getDate()}일, 학교 ${sch.length}개, 일정 ${evs.length}개, 할 일 ${tds.length}개`);
-      const n = document.createElement("span"); n.className = "dnum"; n.textContent = d.getDate(); b.append(n);
+      const n = document.createElement("span"); n.className = "dnum"; n.textContent = d.getDate();
+      if (diaryOf(k)) { const w = document.createElement("span"); w.className = "dnum-wrap"; const p2 = document.createElement("span"); p2.className = "dia"; p2.textContent = "✎"; p2.title = "다이어리 있음"; w.append(n, p2); b.append(w); }
+      else b.append(n);
       if (HOLIDAYS[k]) { const h = document.createElement("span"); h.className = "hol-name"; h.textContent = HOLIDAYS[k]; b.append(h); }
       let show = HOLIDAYS[k] ? 1 : 2;
       sch.slice(0, show).forEach(([, t, ty]) => {
@@ -548,6 +680,8 @@
     const diff = Math.round((d - parse(tk)) / 864e5);
     $("selSub").textContent = diff === 0 ? "오늘" : diff === 1 ? "내일" : diff === -1 ? "어제" : diff > 0 ? `D-${diff}` : `${-diff}일 전`;
     $("selHol").textContent = HOLIDAYS[sel] || "";
+    fillDiary($("sideDiary"), sel);
+    if (document.activeElement !== $("sideDiary") && !diaryTimers.size) $("diaryState").textContent = diaryOf(sel) ? "저장됨" : "";
 
     const ul = $("events"); ul.textContent = "";
     const evs = eventsOn(sel);
@@ -663,8 +797,21 @@
     putItem({ id: newId(), kind: "todo", title: t, date: sel, done: false, createdAt: Date.now() });
     $("quickInput").value = "";
   });
-  $("prev").addEventListener("click", () => { view.setMonth(view.getMonth() - 1); renderCal(); });
-  $("next").addEventListener("click", () => { view.setMonth(view.getMonth() + 1); renderCal(); });
+  const step = n => {
+    if (mode === "week") { sel = addDays(sel, 7 * n); const d = parse(sel); view = new Date(d.getFullYear(), d.getMonth(), 1); render(); }
+    else { view.setMonth(view.getMonth() + n); renderCal(); }
+  };
+  $("prev").addEventListener("click", () => step(-1));
+  $("next").addEventListener("click", () => step(1));
+  const setMode = m => {
+    mode = m;
+    try { localStorage.setItem(VIEW_KEY, m); } catch {}
+    const d = parse(sel); view = new Date(d.getFullYear(), d.getMonth(), 1);
+    render();
+  };
+  $("vMonth").addEventListener("click", () => setMode("month"));
+  $("vWeek").addEventListener("click", () => setMode("week"));
+  bindDiary($("sideDiary"), () => sel);
   $("goToday").addEventListener("click", () => { view = new Date(); view.setDate(1); sel = todayKey(); render(); });
 
   $("dows").innerHTML = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
