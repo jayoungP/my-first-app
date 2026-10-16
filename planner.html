@@ -17,9 +17,9 @@
     --sat: #2a62b8;
     --today: #1f5f8b;
     --cat-work: #2f6fb0;
-    --cat-life: #2f8a5b;
+    --cat-life: #b8860b;
     --cat-study: #8a5bc4;
-    --cat-meet: #d0782a;
+    --cat-meet: #d4602a;
     --school: #0f7c80;
     --exam: #c8352e;
     --off: #8b96a3;
@@ -35,14 +35,14 @@
     :root:not([data-theme="light"]) {
       --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
       --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-      --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
+      --cat-work: #6ea6e0; --cat-life: #e2bd4f; --cat-study: #b893ea; --cat-meet: #ef8c5c; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
       --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
     --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-    --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
+    --cat-work: #6ea6e0; --cat-life: #e2bd4f; --cat-study: #b893ea; --cat-meet: #ef8c5c; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
     --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
   }
 
@@ -160,7 +160,12 @@
   .legend label input { accent-color: var(--school); width: 15px; height: 15px; margin: 0; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .78rem; color: var(--muted); padding: 10px 16px 0; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
-  .legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--c); }
+  .legend { flex-direction: column; gap: 6px; }
+  .lg-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .lg-row b { color: var(--ink); font-weight: 600; min-width: 3.5em; }
+  .legend i { width: 12px; height: 9px; border-radius: 2px; background: var(--c); }
+  .legend i.soft { background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c); }
+  .lg-row .tip { margin-left: auto; }
 
   /* 입력 창 */
   dialog {
@@ -663,10 +668,14 @@
   $("goToday").addEventListener("click", () => { view = new Date(); view.setDate(1); sel = todayKey(); render(); });
 
   $("dows").innerHTML = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
-  $("legend").innerHTML = `<label><input type="checkbox" id="showSchool"${showSchool ? " checked" : ""}>학교 일정</label>`
-    + (SUSI.length ? `<label><input type="checkbox" id="showSusi"${showSusi ? " checked" : ""}>수시 일정</label>` : "")
-    + Object.entries(SCHOOL_TYPE).filter(([id]) => SUSI.length || (id !== "susi" && id !== "ann")).map(([, c]) => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("")
-    + CATS.map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("") + `<span>· 날짜를 두 번 누르면 바로 일정 추가</span>`;
+  const swatch = (c, solid) => `<span><i class="${solid ? "solid" : "soft"}" style="--c:var(${c.v})"></i>${c.name}</span>`;
+  $("legend").innerHTML =
+    `<div class="lg-row"><b>학교</b>`
+    + `<label><input type="checkbox" id="showSchool"${showSchool ? " checked" : ""}>학사일정</label>`
+    + (SUSI.length ? `<label><input type="checkbox" id="showSusi"${showSusi ? " checked" : ""}>수시</label>` : "")
+    + Object.entries(SCHOOL_TYPE).filter(([id]) => SUSI.length || (id !== "susi" && id !== "ann")).map(([, c]) => swatch(c, true)).join("")
+    + `</div><div class="lg-row"><b>내 일정</b>` + CATS.map(c => swatch(c, false)).join("")
+    + `<span class="tip">날짜를 두 번 누르면 바로 일정 추가</span></div>`;
   $("showSchool").addEventListener("change", e => {
     showSchool = e.target.checked;
     try { localStorage.setItem(SHOW_KEY, showSchool ? "1" : "0"); } catch {}
