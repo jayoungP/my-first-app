@@ -20,6 +20,9 @@
     --cat-life: #2f8a5b;
     --cat-study: #8a5bc4;
     --cat-meet: #d0782a;
+    --school: #0f7c80;
+    --exam: #c8352e;
+    --off: #8b96a3;
     --danger: #b3261e;
     --shadow: 0 1px 2px rgb(28 37 48 / .06), 0 4px 16px rgb(28 37 48 / .06);
     --font-display: "Gowun Batang", "IBM Plex Sans KR", serif;
@@ -30,14 +33,14 @@
     :root:not([data-theme="light"]) {
       --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
       --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-      --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062;
+      --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996;
       --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
     --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-    --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062;
+    --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996;
     --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
   }
 
@@ -147,6 +150,12 @@
   .progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-bottom: 8px; }
   .progress i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s; }
 
+  .ev.school { grid-template-columns: 64px minmax(0, 1fr); cursor: default; }
+  .ev.school:hover { background: none; }
+  .ev.school .t { color: var(--c); font-family: var(--font-body); font-weight: 600; font-size: .78rem; }
+  .chip.sc { background: var(--c); color: var(--paper); border-left-color: var(--c); }
+  .legend label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--ink); font-weight: 500; }
+  .legend label input { accent-color: var(--school); width: 15px; height: 15px; margin: 0; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .78rem; color: var(--muted); padding: 10px 16px 0; }
   .legend span { display: inline-flex; align-items: center; gap: 5px; }
   .legend i { width: 9px; height: 9px; border-radius: 2px; background: var(--c); }
@@ -287,6 +296,96 @@
     "2027-09-15": "추석", "2027-09-16": "추석 연휴", "2027-10-03": "개천절", "2027-10-04": "대체공휴일",
     "2027-10-09": "한글날", "2027-10-11": "대체공휴일", "2027-12-25": "성탄절", "2027-12-27": "대체공휴일",
   };
+  // 2026학년도 2학기 학사일정(안) — 학교에서 받은 엑셀(2026.10.15.)에서 옮김. 공휴일은 HOLIDAYS에 있어 뺐다.
+  const SCHOOL = [
+    ["2026-08-10", "여름방학", "off"],
+    ["2026-08-11", "여름방학", "off"],
+    ["2026-08-12", "여름방학", "off"],
+    ["2026-08-13", "여름방학", "off"],
+    ["2026-08-14", "여름방학", "off"],
+    ["2026-08-18", "개학식", "event"],
+    ["2026-08-21", "사회정서교육(2)", "event"],
+    ["2026-08-25", "교원학습공동체", "event"],
+    ["2026-08-28", "장애이해교육(1)", "event"],
+    ["2026-08-28", "가정폭력 및 도박예방교육(1)", "event"],
+    ["2026-08-29", "과학탐구교실(3기)", "event"],
+    ["2026-09-01", "신학기상담주간", "event"],
+    ["2026-09-02", "전국연합학력평가(1,2학년)", "exam"],
+    ["2026-09-02", "대수능모의평가(3학년)", "exam"],
+    ["2026-09-03", "신학기상담주간", "event"],
+    ["2026-09-03", "학부모 학교 방문의 날", "event"],
+    ["2026-09-04", "신학기상담주간", "event"],
+    ["2026-09-04", "국가수준학업성취도평가(2학년)", "exam"],
+    ["2026-09-04", "직업 탐색의 날(2)", "event"],
+    ["2026-09-07", "신학기상담주간", "event"],
+    ["2026-09-08", "신학기상담주간", "event"],
+    ["2026-09-08", "교원학습공동체", "event"],
+    ["2026-09-11", "교직원 심폐소생술 교육", "event"],
+    ["2026-09-15", "교직원연수", "event"],
+    ["2026-09-18", "1,2학년: 학급자치연계 봉사활동(2)", "event"],
+    ["2026-09-18", "3학년: 봉사활동(2)", "event"],
+    ["2026-09-30", "중간고사1일", "exam"],
+    ["2026-10-01", "중간고사2일", "exam"],
+    ["2026-10-02", "중간고사3일", "exam"],
+    ["2026-10-06", "중간고사4일", "exam"],
+    ["2026-10-07", "중간고사5일", "exam"],
+    ["2026-10-08", "재량휴업일", "off"],
+    ["2026-10-13", "교원학습공동체", "event"],
+    ["2026-10-15", "주제 발표 한마당", "event"],
+    ["2026-10-16", "인권교육(2)", "event"],
+    ["2026-10-19", "온라인 코딩 파티 (~11.21.)", "event"],
+    ["2026-10-20", "전국연합학력평가(1,2,3학년)", "exam"],
+    ["2026-10-23", "약물오남용예방교육(1)", "event"],
+    ["2026-10-23", "동아리활동평가(1)", "event"],
+    ["2026-10-24", "창의과학체험활동2", "event"],
+    ["2026-10-29", "현장체험학습(1,2학년)(4)", "event"],
+    ["2026-10-30", "현장체험학습(1,2학년)(4)", "event"],
+    ["2026-11-02", "금요일 수업 운영", "event"],
+    ["2026-11-06", "학교폭력 및 아동학대 예방교육(1)", "event"],
+    ["2026-11-06", "지진대피 훈련(1)", "event"],
+    ["2026-11-10", "교원학습공동체", "event"],
+    ["2026-11-13", "교직원회의", "event"],
+    ["2026-11-16", "교직원회의", "event"],
+    ["2026-11-17", "금요일 수업 운영", "event"],
+    ["2026-11-18", "장행식(2)", "event"],
+    ["2026-11-19", "대학수학능력시험", "exam"],
+    ["2026-11-19", "1,2학년 재량휴업일", "off"],
+    ["2026-11-20", "재량휴업일", "off"],
+    ["2026-11-23", "기말고사(3) 1일", "exam"],
+    ["2026-11-24", "기말고사(3) 2일", "exam"],
+    ["2026-11-25", "기말고사(3) 3일", "exam"],
+    ["2026-11-26", "기말고사(3) 4일", "exam"],
+    ["2026-11-27", "기말고사(3) 5일", "exam"],
+    ["2026-11-27", "지능정보서비스 과의존 예방교육(1)", "event"],
+    ["2026-11-27", "소방훈련(1)", "event"],
+    ["2026-12-01", "교직원연수", "event"],
+    ["2026-12-07", "기말고사(1,2) 1일", "exam"],
+    ["2026-12-08", "기말고사(1,2) 2일", "exam"],
+    ["2026-12-09", "기말고사(1,2) 3일", "exam"],
+    ["2026-12-10", "기말고사(1,2) 4일", "exam"],
+    ["2026-12-10", "3학년 재량휴업일", "off"],
+    ["2026-12-11", "기말고사(1,2) 5일", "exam"],
+    ["2026-12-21", "목요일 수업 운영", "event"],
+    ["2026-12-22", "금요일 수업 운영", "event"],
+    ["2026-12-29", "목요일 수업 운영", "event"],
+    ["2026-12-30", "금요일 수업 운영", "event"],
+    ["2027-01-05", "교직원회의", "event"],
+    ["2027-01-07", "사회 정서 교육(4)", "event"],
+    ["2027-01-08", "졸업식(1)", "event"],
+    ["2027-01-08", "종업식(1)", "event"],
+    ["2027-01-14", "문제 해결 프로그래밍 챌린지", "event"],
+    ["2027-01-15", "문제 해결 프로그래밍 챌린지", "event"],
+  ];
+  const SCHOOL_TYPE = {
+    event: { name: "학교", v: "--school" },
+    exam: { name: "시험", v: "--exam" },
+    off: { name: "쉬는 날", v: "--off" },
+  };
+  const SHOW_KEY = "haru-planner-show-school";
+  let showSchool = true;
+  try { showSchool = localStorage.getItem(SHOW_KEY) !== "0"; } catch {}
+  const schoolOn = k => showSchool ? SCHOOL.filter(x => x[0] === k) : [];
+
   const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
   const pad = n => String(n).padStart(2, "0");
@@ -387,17 +486,25 @@
       if (HOLIDAYS[k]) b.classList.add("hol");
       if (k === tk) b.classList.add("today");
       if (k === sel) b.classList.add("sel");
-      const evs = eventsOn(k), tds = todosOn(k);
-      b.setAttribute("aria-label", `${d.getMonth() + 1}월 ${d.getDate()}일, 일정 ${evs.length}개, 할 일 ${tds.length}개`);
+      const evs = eventsOn(k), tds = todosOn(k), sch = schoolOn(k);
+      b.setAttribute("aria-label", `${d.getMonth() + 1}월 ${d.getDate()}일, 학교 ${sch.length}개, 일정 ${evs.length}개, 할 일 ${tds.length}개`);
       const n = document.createElement("span"); n.className = "dnum"; n.textContent = d.getDate(); b.append(n);
       if (HOLIDAYS[k]) { const h = document.createElement("span"); h.className = "hol-name"; h.textContent = HOLIDAYS[k]; b.append(h); }
-      const show = HOLIDAYS[k] ? 1 : 2;
+      let show = HOLIDAYS[k] ? 1 : 2;
+      sch.slice(0, show).forEach(([, t, ty]) => {
+        const c = document.createElement("span"); c.className = "chip sc"; c.style.setProperty("--c", `var(${SCHOOL_TYPE[ty].v})`);
+        c.textContent = t; b.append(c);
+      });
+      const schHidden = Math.max(0, sch.length - show);
+      show = Math.max(0, show - sch.length);
       evs.slice(0, show).forEach(ev => {
         const c = document.createElement("span"); c.className = "chip"; c.style.setProperty("--c", catColor(ev.cat));
         c.textContent = (ev.start ? ev.start + " " : "") + ev.title; b.append(c);
       });
-      if (evs.length > show) { const mo = document.createElement("span"); mo.className = "more"; mo.textContent = `+${evs.length - show}개`; b.append(mo); }
+      const hidden = schHidden + Math.max(0, evs.length - show);
+      if (hidden) { const mo = document.createElement("span"); mo.className = "more"; mo.textContent = `+${hidden}개`; b.append(mo); }
       const dots = document.createElement("span"); dots.className = "dots";
+      sch.slice(0, 2).forEach(([, , ty]) => { const i2 = document.createElement("i"); i2.style.setProperty("--c", `var(${SCHOOL_TYPE[ty].v})`); dots.append(i2); });
       evs.slice(0, 4).forEach(ev => { const i2 = document.createElement("i"); i2.style.setProperty("--c", catColor(ev.cat)); dots.append(i2); });
       if (tds.some(t => !t.done)) { const i2 = document.createElement("i"); i2.style.setProperty("--c", "var(--muted)"); dots.append(i2); }
       b.append(dots);
@@ -416,7 +523,16 @@
 
     const ul = $("events"); ul.textContent = "";
     const evs = eventsOn(sel);
-    if (!evs.length) ul.innerHTML = `<li class="empty">일정이 없어요. ‘+ 일정 추가’를 누르거나 달력의 날짜를 두 번 누르세요.</li>`;
+    const sch = schoolOn(sel);
+    sch.forEach(([, t, ty]) => {
+      const li = document.createElement("li");
+      const box = document.createElement("div"); box.className = "ev school";
+      box.style.setProperty("--c", `var(${SCHOOL_TYPE[ty].v})`);
+      const tg = document.createElement("span"); tg.className = "t"; tg.textContent = SCHOOL_TYPE[ty].name;
+      const ti = document.createElement("div"); ti.className = "title"; ti.textContent = t;
+      box.append(tg, ti); li.append(box); ul.append(li);
+    });
+    if (!evs.length && !sch.length) ul.innerHTML = `<li class="empty">일정이 없어요. ‘+ 일정 추가’를 누르거나 달력의 날짜를 두 번 누르세요.</li>`;
     evs.forEach(ev => {
       const li = document.createElement("li");
       const b = document.createElement("button"); b.className = "ev"; b.type = "button";
@@ -511,7 +627,14 @@
   $("goToday").addEventListener("click", () => { view = new Date(); view.setDate(1); sel = todayKey(); render(); });
 
   $("dows").innerHTML = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
-  $("legend").innerHTML = CATS.map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("") + `<span>· 날짜를 두 번 누르면 바로 일정 추가</span>`;
+  $("legend").innerHTML = `<label><input type="checkbox" id="showSchool"${showSchool ? " checked" : ""}>학교 일정</label>`
+    + Object.values(SCHOOL_TYPE).map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("")
+    + CATS.map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("") + `<span>· 날짜를 두 번 누르면 바로 일정 추가</span>`;
+  $("showSchool").addEventListener("change", e => {
+    showSchool = e.target.checked;
+    try { localStorage.setItem(SHOW_KEY, showSchool ? "1" : "0"); } catch {}
+    render();
+  });
   const now = new Date();
   $("todayLine").textContent = `오늘 ${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${DOW[now.getDay()]}`;
 
