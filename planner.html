@@ -177,6 +177,10 @@
   }
   .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   @media (max-width: 420px) { .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .row .field:first-child { grid-column: 1 / -1; } }
+  .hint { font-weight: 400; color: var(--muted); }
+  .end-row { display: flex; gap: 6px; }
+  .end-row input { flex: 1; }
+  .end-row .ghost { border: 1px solid var(--line); background: none; border-radius: 8px; padding: 0 12px; white-space: nowrap; font-size: .85rem; }
   .cats { display: flex; flex-wrap: wrap; gap: 6px; }
   .cats label { cursor: pointer; }
   .cats input { position: absolute; opacity: 0; pointer-events: none; }
@@ -251,8 +255,12 @@
     <div class="field"><label for="fTitle">제목</label><input id="fTitle" maxlength="80" placeholder="예: 팀 회의" required></div>
     <div class="row">
       <div class="field"><label for="fDate">날짜</label><input id="fDate" type="date" required></div>
-      <div class="field"><label for="fStart">시작</label><input id="fStart" type="time"></div>
-      <div class="field"><label for="fEnd">끝</label><input id="fEnd" type="time"></div>
+      <div class="field"><label for="fStart">시작 시간</label><input id="fStart" type="time"></div>
+      <div class="field"><label for="fEnd">끝 시간</label><input id="fEnd" type="time"></div>
+    </div>
+    <div class="field">
+      <label for="fEndDate">끝나는 날 <span class="hint">여러 날 이어지는 일정이면 고르세요</span></label>
+      <div class="end-row"><input id="fEndDate" type="date"><button type="button" class="ghost" id="fEndClear">하루만</button></div>
     </div>
     <div class="field"><span class="lbl">분류</span><div class="cats" id="fCats"></div></div>
     <div class="field">
@@ -454,7 +462,9 @@
   }
 
   // ---------- 일정 반복 계산 ----------
+  const isSpan = ev => !!ev.endDate && ev.endDate > ev.date;
   function occursOn(ev, k) {
+    if (isSpan(ev)) return k >= ev.date && k <= ev.endDate;
     if (ev.date === k) return true;
     if (!ev.repeat || ev.repeat === "none" || k < ev.date) return false;
     const a = parse(ev.date), b = parse(k);
@@ -512,7 +522,7 @@
       show = Math.max(0, show - sch.length);
       evs.slice(0, show).forEach(ev => {
         const c = document.createElement("span"); c.className = "chip"; c.style.setProperty("--c", catColor(ev.cat));
-        c.textContent = (ev.start ? ev.start + " " : "") + ev.title; b.append(c);
+        c.textContent = (isSpan(ev) && k > ev.date ? "↳ " : ev.start ? ev.start + " " : "") + ev.title; b.append(c);
       });
       const hidden = schHidden + Math.max(0, evs.length - show);
       if (hidden) { const mo = document.createElement("span"); mo.className = "more"; mo.textContent = `+${hidden}개`; b.append(mo); }
@@ -551,13 +561,21 @@
       const b = document.createElement("button"); b.className = "ev"; b.type = "button";
       b.style.setProperty("--c", catColor(ev.cat));
       const t = document.createElement("span"); t.className = "t";
-      t.textContent = ev.start ? ev.start + (ev.end ? "\n~" + ev.end : "") : "하루 종일";
+      const md = s => { const x = parse(s); return `${x.getMonth() + 1}/${x.getDate()}`; };
+      t.textContent = isSpan(ev) ? `${md(ev.date)}~\n${md(ev.endDate)}`
+        : ev.start ? ev.start + (ev.end ? "\n~" + ev.end : "") : "하루 종일";
       t.style.whiteSpace = "pre";
       const body = document.createElement("span");
       const ti = document.createElement("div"); ti.className = "title"; ti.textContent = ev.title;
       const meta = document.createElement("div"); meta.className = "meta";
       const rep = { daily: "매일", weekly: "매주", monthly: "매월", yearly: "매년" }[ev.repeat];
-      meta.textContent = [(CATS.find(c => c.id === ev.cat) || CATS[0]).name, rep && `${rep} 반복`, ev.memo].filter(Boolean).join(" · ");
+      const span = isSpan(ev) && (() => {
+        const total = Math.round((parse(ev.endDate) - parse(ev.date)) / 864e5) + 1;
+        const nth = Math.round((parse(sel) - parse(ev.date)) / 864e5) + 1;
+        const tm = [ev.start && `${md(ev.date)} ${ev.start} 시작`, ev.end && `${md(ev.endDate)} ${ev.end} 끝`].filter(Boolean).join(", ");
+        return `${total}일 중 ${nth}일째` + (tm ? ` (${tm})` : "");
+      })();
+      meta.textContent = [(CATS.find(c => c.id === ev.cat) || CATS[0]).name, span, rep && `${rep} 반복`, ev.memo].filter(Boolean).join(" · ");
       body.append(ti, meta); b.append(t, body);
       b.addEventListener("click", () => openEditor(ev));
       li.append(b); ul.append(li);
@@ -594,6 +612,7 @@
     $("edTitle").textContent = ev ? "일정 고치기" : "일정 추가";
     $("fTitle").value = ev?.title || "";
     $("fDate").value = ev?.date || date || sel;
+    $("fEndDate").value = ev?.endDate || "";
     $("fStart").value = ev?.start || "";
     $("fEnd").value = ev?.end || "";
     $("fRepeat").value = ev?.repeat || "none";
@@ -605,6 +624,7 @@
     $("fTitle").focus();
   }
   $("edCancel").addEventListener("click", () => dlg.close());
+  $("fEndClear").addEventListener("click", () => { $("fEndDate").value = ""; });
   $("edDel").addEventListener("click", e => {
     const b = e.currentTarget;
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = editing?.repeat && editing.repeat !== "none" ? "반복 일정 모두 삭제" : "한 번 더 누르면 삭제"; return; }
@@ -616,9 +636,12 @@
     const start = $("fStart").value, end = $("fEnd").value;
     if (!title) { $("edErr").textContent = "제목을 적어 주세요."; return; }
     if (!date) { $("edErr").textContent = "날짜를 골라 주세요."; return; }
-    if (start && end && end < start) { $("edErr").textContent = "끝나는 시간이 시작 시간보다 빨라요."; return; }
+    const endDate = $("fEndDate").value > date ? $("fEndDate").value : "";
+    if ($("fEndDate").value && $("fEndDate").value < date) { $("edErr").textContent = "끝나는 날이 시작 날짜보다 빨라요."; return; }
+    if (endDate && $("fRepeat").value !== "none") { $("edErr").textContent = "여러 날 이어지는 일정은 반복할 수 없어요. 반복을 ‘반복 안 함’으로 바꿔 주세요."; return; }
+    if (!endDate && start && end && end < start) { $("edErr").textContent = "끝나는 시간이 시작 시간보다 빨라요."; return; }
     putItem({
-      id: editing?.id || newId(), kind: "event", title, date, start, end: start ? end : "",
+      id: editing?.id || newId(), kind: "event", title, date, endDate, start, end: start || endDate ? end : "",
       cat: document.querySelector('input[name="cat"]:checked')?.value || "work",
       repeat: $("fRepeat").value, memo: $("fMemo").value.trim(),
       createdAt: editing?.createdAt || Date.now(),
