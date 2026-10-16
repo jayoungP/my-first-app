@@ -12,3 +12,6 @@ secrets.*
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# 학생 개인정보 (플래너와 함께 게시만 하고 저장소에는 올리지 않음)
+susi-data.js

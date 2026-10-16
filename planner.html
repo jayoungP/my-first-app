@@ -23,6 +23,8 @@
     --school: #0f7c80;
     --exam: #c8352e;
     --off: #8b96a3;
+    --susi: #b0477f;
+    --ann: #7a5a9e;
     --danger: #b3261e;
     --shadow: 0 1px 2px rgb(28 37 48 / .06), 0 4px 16px rgb(28 37 48 / .06);
     --font-display: "Gowun Batang", "IBM Plex Sans KR", serif;
@@ -33,14 +35,14 @@
     :root:not([data-theme="light"]) {
       --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
       --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-      --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996;
+      --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
       --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #12171d; --paper: #1a2129; --ink: #e4e9ee; --muted: #93a0ad; --line: #2c3540;
     --accent: #7db6dd; --accent-soft: #1f3344; --sun: #f0817a; --sat: #86aef0; --today: #7db6dd;
-    --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996;
+    --cat-work: #6ea6e0; --cat-life: #63c08f; --cat-study: #b893ea; --cat-meet: #eba062; --school: #4fc1c4; --exam: #f0817a; --off: #7c8996; --susi: #e48ab9; --ann: #c3a6e6;
     --danger: #f08a82; --shadow: 0 1px 2px rgb(0 0 0 / .3); color-scheme: dark;
   }
 
@@ -273,6 +275,7 @@
   </form>
 </dialog>
 
+<script src="susi-data.js"></script>
 <script>
 (() => {
   const CATS = [
@@ -376,15 +379,25 @@
     ["2027-01-14", "문제 해결 프로그래밍 챌린지", "event"],
     ["2027-01-15", "문제 해결 프로그래밍 챌린지", "event"],
   ];
+  // 3학년 수시 일정은 개인정보라 저장소에 두지 않고 susi-data.js(플래너와 함께 게시)에서 읽는다. 없으면 빈 목록.
+  const SUSI = window.SUSI_DATA || [];
   const SCHOOL_TYPE = {
     event: { name: "학교", v: "--school" },
     exam: { name: "시험", v: "--exam" },
     off: { name: "쉬는 날", v: "--off" },
+    susi: { name: "수시", v: "--susi" },
+    ann: { name: "발표", v: "--ann" },
   };
   const SHOW_KEY = "haru-planner-show-school";
   let showSchool = true;
   try { showSchool = localStorage.getItem(SHOW_KEY) !== "0"; } catch {}
-  const schoolOn = k => showSchool ? SCHOOL.filter(x => x[0] === k) : [];
+  const SUSI_KEY = "haru-planner-show-susi";
+  let showSusi = true;
+  try { showSusi = localStorage.getItem(SUSI_KEY) !== "0"; } catch {}
+  const schoolOn = k => [
+    ...(showSchool ? SCHOOL.filter(x => x[0] === k) : []),
+    ...(showSusi ? SUSI.filter(x => x[0] === k) : []),
+  ];
 
   const DOW = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -628,11 +641,17 @@
 
   $("dows").innerHTML = DOW.map((d, i) => `<div class="dow${i === 0 ? " sun" : i === 6 ? " sat" : ""}">${d}</div>`).join("");
   $("legend").innerHTML = `<label><input type="checkbox" id="showSchool"${showSchool ? " checked" : ""}>학교 일정</label>`
-    + Object.values(SCHOOL_TYPE).map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("")
+    + (SUSI.length ? `<label><input type="checkbox" id="showSusi"${showSusi ? " checked" : ""}>수시 일정</label>` : "")
+    + Object.entries(SCHOOL_TYPE).filter(([id]) => SUSI.length || (id !== "susi" && id !== "ann")).map(([, c]) => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("")
     + CATS.map(c => `<span><i style="--c:var(${c.v})"></i>${c.name}</span>`).join("") + `<span>· 날짜를 두 번 누르면 바로 일정 추가</span>`;
   $("showSchool").addEventListener("change", e => {
     showSchool = e.target.checked;
     try { localStorage.setItem(SHOW_KEY, showSchool ? "1" : "0"); } catch {}
+    render();
+  });
+  $("showSusi")?.addEventListener("change", e => {
+    showSusi = e.target.checked;
+    try { localStorage.setItem(SUSI_KEY, showSusi ? "1" : "0"); } catch {}
     render();
   });
   const now = new Date();
