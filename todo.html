@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>하루 기록장</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --panel: #ffffff;
+    --ink: #1d2433;
+    --muted: #5b6475;
+    --line: #dde3ee;
+    --accent: #2f6fde;
+    --accent-soft: #e7efff;
+    --money: #e11d48;
+    --money-soft: #fdecef;
+    --good: #15803d;
+    font-size: 17px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c;
+      --panel: #1b2029;
+      --ink: #e6e9ef;
+      --muted: #9aa3b5;
+      --line: #2c3340;
+      --accent: #5b8ff0;
+      --accent-soft: #233150;
+      --money: #fb7185;
+      --money-soft: #3a1f27;
+      --good: #4ade80;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    line-height: 1.5;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+
+  header {
+    display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    padding: .7rem 1rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 5;
+  }
+  header h1 { font-size: 1.25rem; margin: 0; white-space: nowrap; }
+  .date-nav { display: flex; align-items: center; gap: .35rem; margin-left: auto; }
+  .date-nav input[type="date"] {
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: .5rem; padding: .3rem .5rem;
+  }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel);
+    padding: .35rem .8rem; border-radius: .5rem;
+  }
+  .btn:hover { background: var(--accent-soft); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  main {
+    max-width: 1100px; margin: 0 auto; padding: 1rem;
+    display: grid; gap: 1rem;
+    grid-template-columns: 1fr 1fr;
+  }
+  .wide { grid-column: 1 / -1; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: .8rem; padding: 1rem;
+    min-width: 0;
+  }
+  .panel h2 {
+    margin: 0 0 .7rem; font-size: 1.05rem;
+    display: flex; align-items: baseline; gap: .5rem;
+  }
+  .panel h2 .sub { margin-left: auto; font-size: .9rem; font-weight: 500; color: var(--muted); }
+
+  form.add { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .8rem; }
+  form.add input, form.add select {
+    border: 1px solid var(--line); background: var(--bg);
+    border-radius: .5rem; padding: .4rem .6rem; min-width: 0;
+  }
+  form.add input[name="text"], form.add input[name="memo"] { flex: 1 1 8rem; }
+  form.add input[name="amount"] { flex: 0 1 7rem; text-align: right; }
+
+  ul.list { list-style: none; margin: 0; padding: 0; }
+  ul.list li {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .5rem .2rem; border-bottom: 1px solid var(--line);
+  }
+  ul.list li:last-child { border-bottom: none; }
+  ul.list li .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  ul.list li.done .grow { text-decoration: line-through; color: var(--muted); }
+  ul.list input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--accent); }
+  .del {
+    border: none; background: none; color: var(--muted);
+    font-size: 1.1rem; line-height: 1; padding: .2rem .4rem; border-radius: .3rem;
+  }
+  .del:hover { color: var(--money); background: var(--money-soft); }
+  .empty { color: var(--muted); text-align: center; padding: 1rem 0; margin: 0; }
+
+  .tag {
+    font-size: .78rem; padding: .05rem .5rem; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); white-space: nowrap;
+  }
+  .amt { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .total-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-top: .6rem; padding-top: .6rem; border-top: 2px solid var(--line);
+    font-weight: 700;
+  }
+  .total-row .amt { color: var(--money); font-size: 1.15rem; }
+
+  .progress { height: .45rem; background: var(--line); border-radius: 999px; overflow: hidden; margin-bottom: .8rem; }
+  .progress > div { height: 100%; background: var(--good); width: 0; transition: width .2s; }
+
+  /* 달력 */
+  .month-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .7rem; flex-wrap: wrap; }
+  .month-head h2 { margin: 0; }
+  .month-head .sum { margin-left: auto; color: var(--muted); }
+  .month-head .sum b { color: var(--money); font-variant-numeric: tabular-nums; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal .dow { text-align: center; font-size: .8rem; color: var(--muted); padding-bottom: .2rem; }
+  .cal .dow:first-child { color: var(--money); }
+  .cal button.day {
+    border: 1px solid var(--line); background: var(--bg);
+    border-radius: .45rem; min-height: 3.6rem; padding: .25rem;
+    display: flex; flex-direction: column; align-items: stretch; text-align: left;
+    font-size: .8rem; min-width: 0;
+  }
+  .cal button.day:hover { border-color: var(--accent); }
+  .cal button.day.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .cal button.day.today .n { background: var(--accent); color: #fff; border-radius: 999px; padding: 0 .35rem; }
+  .cal .n { font-weight: 600; align-self: flex-start; }
+  .cal .spent { color: var(--money); font-variant-numeric: tabular-nums; margin-top: auto; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal .todo-mark { color: var(--muted); font-size: .72rem; }
+  .cal .todo-mark.all { color: var(--good); }
+
+  .cats { display: flex; flex-direction: column; gap: .4rem; margin-top: 1rem; }
+  .cat-row { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: .6rem; align-items: center; font-size: .9rem; }
+  .bar { height: .6rem; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--money); }
+
+  footer { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 1rem 2rem; }
+  footer .btn { font-size: .85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📒 하루 기록장</h1>
+  <div class="date-nav">
+    <button class="btn" id="prevDay" aria-label="전날">◀</button>
+    <input type="date" id="datePick" aria-label="날짜 선택">
+    <button class="btn" id="nextDay" aria-label="다음날">▶</button>
+    <button class="btn primary" id="goToday">오늘</button>
+  </div>
+</header>
+
+<main>
+  <!-- 할 일 -->
+  <section class="panel">
+    <h2>✅ 할 일 <span class="sub" id="todoCount"></span></h2>
+    <div class="progress"><div id="todoBar"></div></div>
+    <form class="add" id="todoForm">
+      <input name="text" placeholder="할 일을 입력하세요" autocomplete="off" required>
+      <button class="btn primary">추가</button>
+    </form>
+    <ul class="list" id="todoList"></ul>
+  </section>
+
+  <!-- 가계부 -->
+  <section class="panel">
+    <h2>💸 쓴 돈</h2>
+    <form class="add" id="moneyForm">
+      <select name="cat" aria-label="분류"></select>
+      <input name="memo" placeholder="내용 (예: 점심)" autocomplete="off" required>
+      <input name="amount" inputmode="numeric" placeholder="금액" autocomplete="off" required>
+      <button class="btn primary">추가</button>
+    </form>
+    <ul class="list" id="moneyList"></ul>
+    <div class="total-row"><span>하루 합계</span><span class="amt" id="dayTotal">0원</span></div>
+  </section>
+
+  <!-- 달력 + 월간 요약 -->
+  <section class="panel wide">
+    <div class="month-head">
+      <button class="btn" id="prevMonth" aria-label="이전 달">◀</button>
+      <h2 id="monthTitle"></h2>
+      <button class="btn" id="nextMonth" aria-label="다음 달">▶</button>
+      <span class="sum">이번 달 지출 <b id="monthTotal">0원</b></span>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="cats" id="cats"></div>
+  </section>
+</main>
+
+<footer>
+  데이터는 이 브라우저에만 저장됩니다.
+  <button class="btn" id="exportBtn">백업 내려받기</button>
+  <button class="btn" id="importBtn">백업 불러오기</button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+</footer>
+
+<script>
+  const CATS = ['식비', '카페', '교통', '쇼핑', '생활', '문화', '기타'];
+  const STORE_KEY = 'daily-notebook-v1';
+
+  // data = { "2026-10-26": { todos: [{id, text, done}], spends: [{id, cat, memo, amount}] } }
+  let data = load();
+  let selected = todayStr();
+  let viewMonth = selected.slice(0, 7);
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch {}
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmtDate(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+  function todayStr() { return fmtDate(new Date()); }
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function shiftDay(s, n) { const d = parseDate(s); d.setDate(d.getDate() + n); return fmtDate(d); }
+  function won(n) { return n.toLocaleString('ko-KR') + '원'; }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function day(s) {
+    if (!data[s]) data[s] = { todos: [], spends: [] };
+    return data[s];
+  }
+  function cleanup(s) {
+    const d = data[s];
+    if (d && !d.todos.length && !d.spends.length) delete data[s];
+  }
+  function sumSpends(s) {
+    const d = data[s];
+    return d ? d.spends.reduce((a, x) => a + x.amount, 0) : 0;
+  }
+
+  // ---------- 화면 그리기 ----------
+  const $ = id => document.getElementById(id);
+
+  function el(tag, props = {}, ...kids) {
+    const e = document.createElement(tag);
+    Object.assign(e, props);
+    e.append(...kids);
+    return e;
+  }
+
+  function renderTodos() {
+    const list = $('todoList');
+    const todos = data[selected]?.todos || [];
+    list.replaceChildren();
+    if (!todos.length) list.append(el('p', { className: 'empty', textContent: '할 일이 없어요' }));
+    for (const t of todos) {
+      const cb = el('input', { type: 'checkbox', checked: t.done, ariaLabel: '완료' });
+      cb.onchange = () => { t.done = cb.checked; save(); render(); };
+      const del = el('button', { className: 'del', textContent: '✕', ariaLabel: '삭제' });
+      del.onclick = () => {
+        day(selected).todos = todos.filter(x => x !== t);
+        cleanup(selected); save(); render();
+      };
+      list.append(el('li', { className: t.done ? 'done' : '' }, cb, el('span', { className: 'grow', textContent: t.text }), del));
+    }
+    const done = todos.filter(t => t.done).length;
+    $('todoCount').textContent = todos.length ? `${done} / ${todos.length} 완료` : '';
+    $('todoBar').style.width = todos.length ? (done / todos.length * 100) + '%' : '0';
+  }
+
+  function renderSpends() {
+    const list = $('moneyList');
+    const spends = data[selected]?.spends || [];
+    list.replaceChildren();
+    if (!spends.length) list.append(el('p', { className: 'empty', textContent: '기록된 지출이 없어요' }));
+    for (const s of spends) {
+      const del = el('button', { className: 'del', textContent: '✕', ariaLabel: '삭제' });
+      del.onclick = () => {
+        day(selected).spends = spends.filter(x => x !== s);
+        cleanup(selected); save(); render();
+      };
+      list.append(el('li', {},
+        el('span', { className: 'tag', textContent: s.cat }),
+        el('span', { className: 'grow', textContent: s.memo }),
+        el('span', { className: 'amt', textContent: won(s.amount) }),
+        del));
+    }
+    $('dayTotal').textContent = won(sumSpends(selected));
+  }
+
+  function renderMonth() {
+    const [y, m] = viewMonth.split('-').map(Number);
+    $('monthTitle').textContent = `${y}년 ${m}월`;
+
+    const cal = $('cal');
+    cal.replaceChildren();
+    for (const d of ['일', '월', '화', '수', '목', '금', '토']) cal.append(el('div', { className: 'dow', textContent: d }));
+
+    const first = new Date(y, m - 1, 1).getDay();
+    const days = new Date(y, m, 0).getDate();
+    for (let i = 0; i < first; i++) cal.append(el('div'));
+
+    const today = todayStr();
+    let monthTotal = 0;
+    const byCat = {};
+
+    for (let d = 1; d <= days; d++) {
+      const s = `${viewMonth}-${pad(d)}`;
+      const rec = data[s];
+      const spent = sumSpends(s);
+      monthTotal += spent;
+      rec?.spends.forEach(x => byCat[x.cat] = (byCat[x.cat] || 0) + x.amount);
+
+      const btn = el('button', { className: 'day' + (s === selected ? ' sel' : '') + (s === today ? ' today' : '') });
+      btn.append(el('span', { className: 'n', textContent: d }));
+      if (rec?.todos.length) {
+        const done = rec.todos.filter(t => t.done).length;
+        btn.append(el('span', { className: 'todo-mark' + (done === rec.todos.length ? ' all' : ''), textContent: `✓ ${done}/${rec.todos.length}` }));
+      }
+      if (spent) btn.append(el('span', { className: 'spent', textContent: spent.toLocaleString('ko-KR') }));
+      btn.onclick = () => select(s);
+      cal.append(btn);
+    }
+    $('monthTotal').textContent = won(monthTotal);
+
+    const cats = $('cats');
+    cats.replaceChildren();
+    const sorted = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+    const max = sorted[0]?.[1] || 1;
+    for (const [c, v] of sorted) {
+      const bar = el('div', { className: 'bar' }, el('div'));
+      bar.firstChild.style.width = (v / max * 100) + '%';
+      cats.append(el('div', { className: 'cat-row' },
+        el('span', { textContent: c }), bar,
+        el('span', { className: 'amt', textContent: `${won(v)} (${Math.round(v / monthTotal * 100)}%)` })));
+    }
+  }
+
+  function render() {
+    $('datePick').value = selected;
+    renderTodos();
+    renderSpends();
+    renderMonth();
+  }
+
+  function select(s) {
+    selected = s;
+    viewMonth = s.slice(0, 7);
+    render();
+  }
+
+  // ---------- 입력 ----------
+  const catSel = document.querySelector('#moneyForm select');
+  for (const c of CATS) catSel.append(el('option', { value: c, textContent: c }));
+
+  $('todoForm').onsubmit = e => {
+    e.preventDefault();
+    const input = e.target.text;
+    const text = input.value.trim();
+    if (!text) return;
+    day(selected).todos.push({ id: uid(), text, done: false });
+    save(); render();
+    input.value = ''; input.focus();
+  };
+
+  const amountInput = document.querySelector('#moneyForm input[name="amount"]');
+  amountInput.oninput = () => {
+    const n = amountInput.value.replace(/[^\d]/g, '');
+    amountInput.value = n ? Number(n).toLocaleString('ko-KR') : '';
+  };
+
+  $('moneyForm').onsubmit = e => {
+    e.preventDefault();
+    const f = e.target;
+    const memo = f.memo.value.trim();
+    const amount = Number(f.amount.value.replace(/[^\d]/g, ''));
+    if (!memo || !amount) { (memo ? f.amount : f.memo).focus(); return; }
+    day(selected).spends.push({ id: uid(), cat: f.cat.value, memo, amount });
+    save(); render();
+    f.memo.value = ''; f.amount.value = ''; f.memo.focus();
+  };
+
+  $('prevDay').onclick = () => select(shiftDay(selected, -1));
+  $('nextDay').onclick = () => select(shiftDay(selected, 1));
+  $('goToday').onclick = () => select(todayStr());
+  $('datePick').onchange = e => { if (e.target.value) select(e.target.value); };
+
+  function shiftMonth(n) {
+    const [y, m] = viewMonth.split('-').map(Number);
+    const d = new Date(y, m - 1 + n, 1);
+    viewMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    renderMonth();
+  }
+  $('prevMonth').onclick = () => shiftMonth(-1);
+  $('nextMonth').onclick = () => shiftMonth(1);
+
+  // ---------- 백업 ----------
+  $('exportBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = el('a', { href: URL.createObjectURL(blob), download: `하루기록장-${todayStr()}.json` });
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  $('importBtn').onclick = () => $('importFile').click();
+  $('importFile').onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (typeof parsed !== 'object' || Array.isArray(parsed)) throw 0;
+      if (!confirm('지금 기록을 백업 파일 내용으로 바꿀까요?')) return;
+      data = parsed; save(); render();
+    } catch { alert('백업 파일을 읽을 수 없어요.'); }
+    e.target.value = '';
+  };
+
+  render();
+</script>
+</body>
+</html>
