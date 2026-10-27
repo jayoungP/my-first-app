@@ -1,0 +1,1182 @@
+<title>효모 발효 탐구실</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  /* 레이아웃: 위쪽 단계 표시줄 + 한 번에 한 단계씩 보이는 실험 노트. 교사용 화면은 목록(왼쪽)·상세(오른쪽) 2단 */
+  :root {
+    --bg: #f2f5f4;
+    --surface: #ffffff;
+    --surface-2: #e9eeec;
+    --ink: #16201d;
+    --muted: #586863;
+    --line: #d2dbd8;
+    --accent: #0e6b62;
+    --accent-ink: #ffffff;
+    --accent-soft: #dcefeb;
+    --glucose: #b07806;
+    --glucose-soft: #fbefd4;
+    --yeast: #8a6a3d;
+    --yeast-soft: #efe5d6;
+    --water: #2f72ad;
+    --water-soft: #e0edf8;
+    --liquid-base: #e6f0f5;
+    --gas: #ffffff;
+    --glass: #7f938d;
+    --good: #1f7a3a;
+    --good-soft: #e2f3e7;
+    --warn: #9a5800;
+    --warn-soft: #fbeedb;
+    --bad: #b42318;
+    --bad-soft: #fde8e6;
+    --t-a: #0e6b62;
+    --t-b: #c2410c;
+    --t-c: #4f46e5;
+    --t-d: #a21caf;
+    --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1513; --surface: #18201d; --surface-2: #212b28; --ink: #e6eeeb; --muted: #9aaba5; --line: #2f3b37;
+      --accent: #4fc1b2; --accent-ink: #06201c; --accent-soft: #163a35;
+      --glucose: #e8b44a; --glucose-soft: #3a2c10; --yeast: #c9a676; --yeast-soft: #33291b; --water: #7ab4e6; --water-soft: #172b3d;
+      --liquid-base: #22323a; --gas: #dfe7e4; --glass: #8aa19a;
+      --good: #5cc47a; --good-soft: #15301f; --warn: #e3a447; --warn-soft: #3a2a12; --bad: #f07a6e; --bad-soft: #3b1a17;
+      --t-a: #4fc1b2; --t-b: #f08a52; --t-c: #9a9bf7; --t-d: #e07ae6;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1513; --surface: #18201d; --surface-2: #212b28; --ink: #e6eeeb; --muted: #9aaba5; --line: #2f3b37;
+    --accent: #4fc1b2; --accent-ink: #06201c; --accent-soft: #163a35;
+    --glucose: #e8b44a; --glucose-soft: #3a2c10; --yeast: #c9a676; --yeast-soft: #33291b; --water: #7ab4e6; --water-soft: #172b3d;
+    --liquid-base: #22323a; --gas: #dfe7e4; --glass: #8aa19a;
+    --good: #5cc47a; --good-soft: #15301f; --warn: #e3a447; --warn-soft: #3a2a12; --bad: #f07a6e; --bad-soft: #3b1a17;
+    --t-a: #4fc1b2; --t-b: #f08a52; --t-c: #9a9bf7; --t-d: #e07ae6;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+  }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+  button, select, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.3; }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+  /* 상단 */
+  header.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+  header.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; padding-block: .6rem; }
+  header.top h1 { font-size: 1.15rem; margin: 0; }
+  header.top h1 small { font-weight: 400; color: var(--muted); font-size: .8rem; margin-left: .4rem; }
+  .tabs { display: flex; gap: .3rem; margin-left: auto; }
+  .tab { border: 1px solid var(--line); background: var(--surface); padding: .3rem .9rem; border-radius: 999px; font-weight: 500; font-size: .9rem; }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+  .stepper { display: flex; gap: .3rem; overflow-x: auto; padding-block: .6rem; scrollbar-width: thin; }
+  .step-btn {
+    flex: 1 0 auto; display: flex; align-items: center; gap: .45rem;
+    border: 1px solid var(--line); background: var(--surface); border-radius: .5rem;
+    padding: .35rem .7rem; font-size: .88rem; white-space: nowrap; color: var(--muted);
+  }
+  .step-btn .n { font-family: var(--font-mono); font-weight: 600; width: 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); font-size: .8rem; }
+  .step-btn[aria-current="step"] { border-color: var(--accent); color: var(--ink); font-weight: 700; }
+  .step-btn[aria-current="step"] .n { background: var(--accent); color: var(--accent-ink); }
+  .step-btn.done .n { background: var(--accent-soft); color: var(--accent); }
+
+  main { padding-block: .4rem 3rem; }
+  .student-bar { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; margin-bottom: .9rem; font-size: .9rem; }
+  .student-bar label { display: flex; align-items: center; gap: .4rem; color: var(--muted); }
+  .student-bar input { width: 8.5rem; padding: .25rem .5rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); }
+  .student-bar .sub-state { margin-left: auto; font-size: .85rem; }
+
+  .sheet { background: var(--surface); border: 1px solid var(--line); border-radius: .75rem; padding: 1.2rem 1.3rem 1.4rem; }
+  .sheet > h2 { margin: 0 0 .2rem; font-size: 1.35rem; }
+  .sheet > .lead { color: var(--muted); margin: 0 0 1.1rem; max-width: 70ch; }
+  .eyebrow { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .08em; color: var(--accent); font-weight: 600; }
+  .stack { display: grid; gap: 1rem; }
+
+  .field { display: grid; gap: .3rem; }
+  .field > span { font-weight: 700; }
+  .field > span em { font-style: normal; font-weight: 400; color: var(--muted); font-size: .85rem; margin-left: .3rem; }
+  textarea, .text-in {
+    width: 100%; border: 1px solid var(--line); border-radius: .5rem; background: var(--surface);
+    padding: .55rem .7rem; line-height: 1.55;
+  }
+  textarea { min-height: 5.2rem; resize: vertical; }
+  textarea:focus, .text-in:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+  .count { font-size: .75rem; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .nav { display: flex; justify-content: space-between; gap: .5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .btn { border: 1px solid var(--line); background: var(--surface); padding: .5rem 1.05rem; border-radius: .5rem; font-weight: 500; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  .btn.small { padding: .25rem .6rem; font-size: .85rem; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .msg { font-size: .9rem; min-height: 1.4em; }
+  .msg.warn { color: var(--warn); }
+  .msg.good { color: var(--good); }
+  .msg.bad { color: var(--bad); }
+
+  .note { background: var(--surface-2); border-radius: .6rem; padding: .8rem 1rem; font-size: .92rem; }
+  .note h3 { margin: 0 0 .3rem; font-size: .95rem; }
+  .note ul { margin: .2rem 0 0; padding-left: 1.2rem; }
+
+  /* 1단계: 독립 변인 선택 */
+  .iv-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+  .iv-card {
+    text-align: left; border: 2px solid var(--line); background: var(--surface); border-radius: .7rem;
+    padding: .8rem .9rem; display: grid; gap: .25rem;
+  }
+  .iv-card strong { font-size: 1.05rem; }
+  .iv-card span { color: var(--muted); font-size: .85rem; }
+  .iv-card[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .iv-card .values { font-family: var(--font-mono); font-size: .78rem; color: var(--ink); }
+
+  /* 3단계: 실험 설계 */
+  .palette { display: grid; gap: .55rem; background: var(--surface-2); border-radius: .7rem; padding: .8rem .9rem; }
+  .palette-row { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+  .palette-row .row-label { font-size: .8rem; font-weight: 700; color: var(--muted); width: 6.2rem; flex: none; }
+  .chip {
+    border: 1.5px solid currentColor; border-radius: 999px; padding: .28rem .75rem; font-size: .88rem; font-weight: 500;
+    touch-action: none; user-select: none; -webkit-user-select: none; background: var(--surface);
+  }
+  .chip.glucose { color: var(--glucose); background: var(--glucose-soft); }
+  .chip.yeast { color: var(--yeast); background: var(--yeast-soft); }
+  .chip.water { color: var(--water); background: var(--water-soft); }
+  .chip[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+  .chip-ghost { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; opacity: .92; box-shadow: 0 6px 18px rgb(0 0 0 / .2); }
+  .palette-hint { font-size: .8rem; color: var(--muted); margin: 0; }
+
+  .tubes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .7rem; }
+  .tube-card { border: 1px solid var(--line); border-radius: .7rem; padding: .7rem; display: grid; gap: .5rem; align-content: start; background: var(--surface); }
+  .tube-card.role-control { border-color: var(--water); box-shadow: inset 0 0 0 1px var(--water); }
+  .tube-card.role-exp { border-color: var(--glucose); box-shadow: inset 0 0 0 1px var(--glucose); }
+  .tube-head { display: flex; align-items: center; justify-content: space-between; gap: .4rem; }
+  .tube-head b { font-family: var(--font-mono); font-size: 1.25rem; }
+  .role-tag { font-size: .75rem; font-weight: 700; padding: .05rem .5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+  .role-tag.control { background: var(--water-soft); color: var(--water); }
+  .role-tag.exp { background: var(--glucose-soft); color: var(--glucose); }
+  .tube-svg { width: 100%; max-width: 150px; margin: 0 auto; display: block; aspect-ratio: 130 / 190; }
+  .slot {
+    width: 100%; text-align: left; border: 1.5px dashed var(--line); background: var(--surface); border-radius: .5rem;
+    padding: .35rem .55rem; font-size: .85rem; display: grid; gap: 0;
+  }
+  .slot small { color: var(--muted); font-size: .72rem; }
+  .slot.filled { border-style: solid; }
+  .slot.filled.k-glucose { border-color: var(--glucose); background: var(--glucose-soft); }
+  .slot.filled.k-yeast { border-color: var(--yeast); background: var(--yeast-soft); }
+  .slot.filled.k-water { border-color: var(--water); background: var(--water-soft); }
+  .slot.can-drop { border-color: var(--accent); border-style: dashed; background: var(--accent-soft); }
+  .slot.over { border-style: solid; border-width: 2px; }
+  .tube-card select { width: 100%; padding: .3rem .4rem; border: 1px solid var(--line); border-radius: .45rem; background: var(--surface); font-size: .88rem; }
+  .tube-card .mini-label { font-size: .72rem; color: var(--muted); margin-bottom: -.35rem; }
+  .role-pick { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
+  .role-pick button { border: 1px solid var(--line); background: var(--surface); border-radius: .45rem; padding: .25rem; font-size: .85rem; }
+  .role-pick button[aria-pressed="true"].c { background: var(--water); border-color: var(--water); color: var(--surface); font-weight: 700; }
+  .role-pick button[aria-pressed="true"].e { background: var(--glucose); border-color: var(--glucose); color: var(--surface); font-weight: 700; }
+  .tube-clear { justify-self: end; border: 0; background: none; color: var(--muted); font-size: .8rem; text-decoration: underline; padding: 0; }
+
+  /* 4단계: 실험 */
+  .run-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .clock { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .clock small { font-size: .85rem; color: var(--muted); font-weight: 500; }
+  .run-tubes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .7rem; }
+  .run-tube { border: 1px solid var(--line); border-radius: .7rem; padding: .6rem; display: grid; gap: .35rem; text-align: center; }
+  .run-tube .desc { font-size: .78rem; color: var(--muted); line-height: 1.35; }
+  .run-tube .vol { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .run-tube.unused { opacity: .45; }
+  .bub { opacity: 0; }
+  .bubbling .bub { animation: rise 1.4s linear infinite; }
+  .bubbling .bub:nth-child(2) { animation-delay: .45s; }
+  .bubbling .bub:nth-child(3) { animation-delay: .9s; }
+  @keyframes rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-104px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .bubbling .bub { animation: none; opacity: .6; } }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: .9rem; }
+  th, td { border-bottom: 1px solid var(--line); padding: .4rem .55rem; text-align: center; white-space: nowrap; }
+  th { background: var(--surface-2); color: var(--muted); font-weight: 500; font-size: .82rem; }
+  td.num { font-family: var(--font-mono); }
+  td.left, th.left { text-align: left; }
+  .swatch { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .3rem; vertical-align: 0; }
+
+  .chart-box { position: relative; width: 100%; height: 320px; }
+  .chart-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+
+  /* 6단계 */
+  .checklist { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem 1rem; }
+  .checklist li { display: flex; gap: .45rem; align-items: baseline; font-size: .92rem; }
+  .checklist li .mk { font-family: var(--font-mono); font-weight: 600; width: 1.1rem; flex: none; }
+  .checklist li.ok .mk { color: var(--good); }
+  .checklist li.no .mk { color: var(--warn); }
+  .code-box { font-family: var(--font-mono); font-size: .72rem; word-break: break-all; min-height: 6rem; }
+
+  /* 교사용 */
+  .teacher { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .t-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .8rem; }
+  .t-tools .switch { display: flex; align-items: center; gap: .4rem; font-weight: 500; }
+  .t-summary { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); margin-bottom: .6rem; }
+  .t-summary b { color: var(--ink); font-family: var(--font-mono); font-size: 1.05rem; }
+  .sub-list tr { cursor: pointer; }
+  .sub-list tr:hover td { background: var(--surface-2); }
+  .sub-list tr[aria-selected="true"] td { background: var(--accent-soft); }
+  .pill { display: inline-block; font-size: .75rem; font-weight: 700; padding: .05rem .5rem; border-radius: 999px; }
+  .pill.good { background: var(--good-soft); color: var(--good); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.muted { background: var(--surface-2); color: var(--muted); }
+  .detail { display: grid; gap: 1rem; }
+  .detail section { border-top: 1px solid var(--line); padding-top: .8rem; display: grid; gap: .4rem; }
+  .detail section:first-child { border-top: 0; padding-top: 0; }
+  .detail h3 { margin: 0; font-size: 1rem; }
+  .answer { white-space: pre-wrap; background: var(--surface-2); border-radius: .5rem; padding: .5rem .7rem; font-size: .93rem; min-height: 2.2rem; }
+  .answer.empty { color: var(--muted); font-style: italic; }
+  .qa { display: grid; gap: .15rem; }
+  .qa > span { font-size: .8rem; color: var(--muted); font-weight: 700; }
+  .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: .25rem; font-size: .9rem; }
+  .checks li { display: flex; gap: .5rem; align-items: baseline; }
+  .grade-form { display: grid; gap: .7rem; background: var(--surface-2); border-radius: .7rem; padding: .9rem 1rem; }
+  .areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem .9rem; }
+  .areas label { display: grid; gap: .15rem; font-size: .85rem; font-weight: 700; }
+  .areas select, .grade-form select { padding: .3rem .4rem; border: 1px solid var(--line); border-radius: .4rem; background: var(--surface); font-weight: 400; }
+  .levels { display: grid; gap: .3rem; }
+  .levels label { display: grid; grid-template-columns: auto 3.2rem 1fr; gap: .5rem; align-items: start; font-size: .86rem; padding: .35rem .5rem; border-radius: .45rem; border: 1px solid transparent; background: var(--surface); }
+  .levels label.suggest { border-color: var(--accent); }
+  .levels input { margin-top: .3rem; accent-color: var(--accent); }
+  .levels .sc { font-family: var(--font-mono); font-weight: 600; }
+  .empty-state { color: var(--muted); text-align: center; padding: 2rem 1rem; }
+
+  @media (max-width: 900px) {
+    .tubes, .run-tubes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .teacher { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .iv-cards, .two, .checklist, .areas { grid-template-columns: minmax(0, 1fr); }
+    .sheet { padding: 1rem; }
+    .step-btn .t { display: none; }
+    .step-btn[aria-current="step"] .t { display: inline; }
+    .student-bar .sub-state { margin-left: 0; }
+  }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <h1>효모 발효 탐구실<small>세포와 물질대사 · 수행평가</small></h1>
+    <div class="tabs" role="tablist">
+      <button class="tab" id="tabStudent" role="tab" aria-selected="true">탐구하기</button>
+      <button class="tab" id="tabTeacher" role="tab" aria-selected="false" hidden>교사용 · 제출 모아보기</button>
+    </div>
+  </div>
+</header>
+
+<!-- 학생 화면 -->
+<div id="studentView">
+  <div class="wrap">
+    <nav class="stepper" id="stepper" aria-label="탐구 단계"></nav>
+  </div>
+  <main class="wrap">
+    <div class="student-bar">
+      <label for="stuNo">학번 <input id="stuNo" class="text-in" inputmode="numeric" autocomplete="off" placeholder="예: 20315"></label>
+      <label for="stuName">이름 <input id="stuName" class="text-in" autocomplete="off" placeholder="이름"></label>
+      <span class="sub-state" id="subState"></span>
+    </div>
+
+    <!-- 1 -->
+    <section class="sheet" data-step="1">
+      <div class="eyebrow">STEP 1 · 탐구 문제</div>
+      <h2>무엇을 바꾸어 볼까요?</h2>
+      <p class="lead">세 가지 조건 중 <b>하나</b>를 골라 바꾸어 보는 실험을 설계합니다. 고른 조건에 맞게 탐구 문제를 다듬어 적으세요.</p>
+      <div class="stack">
+        <div class="iv-cards" id="ivCards" role="radiogroup" aria-label="바꿀 조건"></div>
+        <label class="field" for="problem"><span>탐구 문제<em>고른 조건에 맞춰 예시 문장이 들어갑니다. 고쳐 써도 됩니다.</em></span>
+          <textarea id="problem" data-field="problem" rows="2" placeholder="먼저 위에서 바꿀 조건을 고르세요."></textarea>
+        </label>
+        <div class="note">
+          <h3>실험실에 준비된 것</h3>
+          <ul>
+            <li>발효관 4개(A~D): 맹관부(막힌 쪽)에 모인 기체의 부피를 눈금(mL)으로 읽습니다.</li>
+            <li>포도당 용액(2%, 5%, 10%, 20%), 효모액(5%, 10%, 20%), 증류수 — 발효관마다 포도당 용액 20 mL + 효모액 10 mL를 넣습니다.</li>
+            <li>항온 수조(15, 25, 35, 45, 55℃), 초시계, 수산화 칼륨(KOH) 수용액</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="sheet" data-step="2" hidden>
+      <div class="eyebrow">STEP 2 · 가설 설정과 변인 찾기</div>
+      <h2>가설을 세우고 변인을 찾아 보세요</h2>
+      <p class="lead" id="problemEcho"></p>
+      <div class="stack">
+        <label class="field" for="hypothesis"><span>가설<em>탐구 문제에 대한 잠정적인 답을 근거와 함께 적으세요.</em></span>
+          <textarea id="hypothesis" data-field="hypothesis" rows="3"></textarea>
+          <div class="count" data-count="hypothesis"></div>
+        </label>
+        <label class="field" for="vInd"><span>독립 변인<em>내가 일부러 바꾸는 조건</em></span>
+          <textarea id="vInd" data-field="vInd" rows="2"></textarea>
+        </label>
+        <label class="field" for="vDep"><span>종속 변인<em>바뀐 조건 때문에 달라지는지 측정하는 것과 측정 방법</em></span>
+          <textarea id="vDep" data-field="vDep" rows="2"></textarea>
+        </label>
+        <label class="field" for="vCtrl"><span>통제 변인<em>모든 발효관에서 똑같이 맞추어야 하는 조건과 그 까닭</em></span>
+          <textarea id="vCtrl" data-field="vCtrl" rows="3"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="sheet" data-step="3" hidden>
+      <div class="eyebrow">STEP 3 · 실험 설계</div>
+      <h2>발효관 A~D를 채우세요</h2>
+      <p class="lead">아래 용액을 발효관의 빈칸으로 <b>끌어다 놓으세요</b>. (눌러서 고른 다음 빈칸을 눌러도 됩니다.) 넣은 용액을 다시 누르면 빠집니다. 수조 온도와 대조군·실험군도 정하세요. 2개 이상의 발효관을 쓰면 됩니다.</p>
+      <div class="stack">
+        <div class="palette" id="palette">
+          <div class="palette-row"><span class="row-label">포도당 용액</span>
+            <button class="chip glucose" data-kind="glucose" data-value="2">포도당 2%</button>
+            <button class="chip glucose" data-kind="glucose" data-value="5">포도당 5%</button>
+            <button class="chip glucose" data-kind="glucose" data-value="10">포도당 10%</button>
+            <button class="chip glucose" data-kind="glucose" data-value="20">포도당 20%</button>
+          </div>
+          <div class="palette-row"><span class="row-label">효모액</span>
+            <button class="chip yeast" data-kind="yeast" data-value="5">효모액 5%</button>
+            <button class="chip yeast" data-kind="yeast" data-value="10">효모액 10%</button>
+            <button class="chip yeast" data-kind="yeast" data-value="20">효모액 20%</button>
+          </div>
+          <div class="palette-row"><span class="row-label">기타</span>
+            <button class="chip water" data-kind="water" data-value="0">증류수</button>
+            <p class="palette-hint">증류수는 포도당 용액 칸, 효모액 칸 어디에나 넣을 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="tubes" id="tubes"></div>
+        <label class="field" for="controlReason"><span>대조군과 실험군을 이렇게 정한 까닭<em>어떤 발효관이 대조군인지, 왜 필요한지 적으세요.</em></span>
+          <textarea id="controlReason" data-field="controlReason" rows="3"></textarea>
+        </label>
+        <div class="msg warn" id="designMsg" role="status"></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="sheet" data-step="4" hidden>
+      <div class="eyebrow">STEP 4 · 가상 실험</div>
+      <h2>발효관을 수조에 넣고 20분 동안 관찰합니다</h2>
+      <p class="lead">5분마다 맹관부에 모인 기체 부피가 결과표에 자동으로 기록됩니다. 실험이 끝나면 KOH 수용액을 넣어 모인 기체가 어떻게 되는지도 확인해 보세요.</p>
+      <div class="stack">
+        <div class="run-bar">
+          <button class="btn primary" id="runBtn">실험 시작</button>
+          <div class="clock" id="clock">0.0 <small>분 경과</small></div>
+          <div class="msg" id="runMsg" role="status"></div>
+        </div>
+        <div class="run-tubes" id="runTubes"></div>
+        <div class="table-scroll" id="runTable"></div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="sheet" data-step="5" hidden>
+      <div class="eyebrow">STEP 5 · 결과 분석</div>
+      <h2>결과를 정리하고 해석하세요</h2>
+      <p class="lead">결과표와 그래프를 보고 발효관마다 기체가 모인 정도를 비교하세요. 그 차이가 왜 생겼는지 발효의 원리와 연결해 설명합니다.</p>
+      <div class="stack">
+        <div class="table-scroll" id="resTable"></div>
+        <div class="chart-box"><canvas id="chart" role="img" aria-label="시간에 따른 발효관별 기체 부피 그래프"></canvas></div>
+        <label class="field" for="analysis"><span>결과 분석<em>① 결과에서 보이는 경향 ② 대조군과 비교 ③ 모인 기체가 무엇인지와 그 근거(KOH 결과) ④ 발효 원리로 설명</em></span>
+          <textarea id="analysis" data-field="analysis" rows="7"></textarea>
+          <div class="count" data-count="analysis"></div>
+        </label>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sheet" data-step="6" hidden>
+      <div class="eyebrow">STEP 6 · 결론 도출과 제출</div>
+      <h2>결론을 내리고 제출하세요</h2>
+      <p class="lead">가설이 맞았는지 판단하고, 탐구 문제에 대한 답을 결론으로 적으세요. 실험의 한계나 더 해 보고 싶은 실험도 적을 수 있습니다.</p>
+      <div class="stack">
+        <label class="field" for="conclusion"><span>결론<em>가설 지지 여부와 근거, 탐구 문제에 대한 답</em></span>
+          <textarea id="conclusion" data-field="conclusion" rows="6"></textarea>
+          <div class="count" data-count="conclusion"></div>
+        </label>
+        <div class="note">
+          <h3>제출 전 확인</h3>
+          <ul class="checklist" id="checklist"></ul>
+        </div>
+        <div class="nav" style="margin-top:0">
+          <button class="btn primary" id="submitBtn">선생님께 제출하기</button>
+        </div>
+        <div class="msg" id="submitMsg" role="status"></div>
+        <div id="fallback" hidden class="field">
+          <span>제출 코드<em>이 화면에서는 바로 제출할 수 없어요. 아래 코드를 복사해 선생님이 안내한 곳에 붙여 넣으세요.</em></span>
+          <textarea id="fallbackCode" class="code-box" readonly></textarea>
+          <div><button class="btn small" id="copyCode">코드 복사</button></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="nav">
+      <button class="btn" id="prevBtn">← 이전 단계</button>
+      <button class="btn primary" id="nextBtn">다음 단계 →</button>
+    </div>
+    <div class="msg warn" id="navMsg" role="status"></div>
+  </main>
+</div>
+
+<!-- 교사 화면 -->
+<div id="teacherView" hidden>
+  <main class="wrap" style="padding-top:1rem">
+    <div class="t-tools">
+      <label class="switch" for="openToggle"><input type="checkbox" id="openToggle"> 제출 받는 중</label>
+      <button class="btn small" id="csvBtn">CSV로 내려받기</button>
+      <button class="btn small" id="importToggle">제출 코드로 추가</button>
+      <span class="msg" id="tMsg" role="status"></span>
+    </div>
+    <div id="importBox" class="field" hidden style="margin-bottom:1rem">
+      <span>학생이 보낸 제출 코드<em>한 줄에 하나씩 여러 개를 붙여 넣어도 됩니다.</em></span>
+      <textarea id="importText" class="code-box"></textarea>
+      <div><button class="btn small primary" id="importBtn">추가하기</button></div>
+    </div>
+    <div class="t-summary" id="tSummary"></div>
+    <div class="teacher">
+      <div class="sheet" style="padding:.6rem">
+        <div class="table-scroll">
+          <table class="sub-list">
+            <thead><tr><th>학번</th><th class="left">이름</th><th>독립 변인</th><th>점수</th></tr></thead>
+            <tbody id="subRows"><tr><td colspan="4" class="empty-state">아직 제출한 학생이 없어요. 학생이 STEP 6에서 제출하면 여기에 바로 나타납니다.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="sheet" id="detail"><div class="empty-state">왼쪽 목록에서 학생을 고르면 답안과 실험 결과가 보여요.</div></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+  // ---------- 상수 ----------
+  const LETTERS = ['A', 'B', 'C', 'D'];
+  const TEMPS = [15, 25, 35, 45, 55];
+  const TIMES = [0, 5, 10, 15, 20];
+  const CAP = 15; // 맹관부 눈금 끝 (mL)
+  const IVS = {
+    glucose: { key: 'g', name: '포도당 농도', desc: '포도당 용액의 농도를 바꿉니다.', values: '증류수 · 2 · 5 · 10 · 20%',
+      problem: '포도당 농도에 따라 효모의 알코올 발효로 발생하는 기체의 양은 어떻게 달라질까?' },
+    yeast: { key: 'y', name: '효모액 농도', desc: '효모액의 농도를 바꿉니다.', values: '증류수 · 5 · 10 · 20%',
+      problem: '효모액의 농도에 따라 효모의 알코올 발효로 발생하는 기체의 양은 어떻게 달라질까?' },
+    temp: { key: 'T', name: '발효 온도', desc: '항온 수조의 온도를 바꿉니다.', values: '15 · 25 · 35 · 45 · 55℃',
+      problem: '온도에 따라 효모의 알코올 발효로 발생하는 기체의 양은 어떻게 달라질까?' },
+  };
+  const STEPS = ['탐구 문제', '가설·변인', '실험 설계', '가상 실험', '결과 분석', '결론·제출'];
+  const LEVELS = [
+    { score: '10', text: '발효의 원리를 바탕으로 탐구 문제에 적합하게 변인을 설정하고 실험을 설계하였으며, 실험 결과를 정확하게 분석하여 과학적으로 타당한 결론을 도출함.' },
+    { score: '9', text: '발효의 원리를 바탕으로 변인을 설정하고 실험을 설계하였으며, 실험 결과를 분석하여 적절한 결론을 도출함.' },
+    { score: '8', text: '탐구 문제에 따라 실험을 설계하고 결과를 분석하였으나, 변인 설정이나 결과에 대한 과학적 설명이 일부 부족함.' },
+    { score: '7', text: '실험 방법과 결과를 제시하고 발효 현상과 관련지어 설명하였으나, 실험 설계 또는 결과 분석이 다소 부족함.' },
+    { score: '6', text: '실험 방법과 결과를 제시하였으나, 변인 설정 및 발효 원리와의 연결이 부족함.' },
+    { score: '5', text: '실험 방법 또는 결과와 발효에 관한 내용을 일부 제시함.' },
+    { score: '미응시', text: '본인의 의사에 의한 수행평가 미응시자, 백지답안, 장기 미인정 결석 및 장기 질병 결석' },
+  ];
+  const AREAS = [['vars', '변인 설정'], ['design', '실험 설계'], ['analysis', '결과 분석'], ['conclusion', '결론 도출']];
+  const AREA_OPTS = [['', '—'], ['2', '잘함'], ['1', '보통'], ['0', '부족']];
+  const DRAFT_KEY = 'ferment-lab-draft-v1';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const gLabel = g => g == null ? '—' : g === 0 ? '증류수' : `포도당 ${g}%`;
+  const yLabel = y => y == null ? '—' : y === 0 ? '증류수' : `효모액 ${y}%`;
+  const tLabel = T => T == null ? '—' : `${T}℃`;
+  const roleLabel = r => r === 'control' ? '대조군' : r === 'exp' ? '실험군' : '미정';
+  const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const tubeColor = L => css('--t-' + L.toLowerCase());
+
+  // ---------- 상태 ----------
+  const blankTubes = () => Object.fromEntries(LETTERS.map(L => [L, { g: null, y: null, T: null, role: null }]));
+  const blank = () => ({
+    student: { no: '', name: '' }, iv: null, problem: '', hypothesis: '', vInd: '', vDep: '', vCtrl: '',
+    tubes: blankTubes(), controlReason: '', results: null, runs: 0, analysis: '', conclusion: '', step: 1, submittedAt: null,
+  });
+  let S = blank();
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (raw) S = Object.assign(blank(), JSON.parse(raw));
+  } catch (e) { /* 저장소를 쓸 수 없으면 새로 시작 */ }
+  let saveTimer = null;
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(S)); } catch (e) {} }, 250);
+  }
+
+  // ---------- 발효 모델 (교육용 단순화) ----------
+  // 기체 발생 속도(mL/분) = 0.62 × 포도당 계수 × 효모 계수 × 온도 계수 × 지연 계수 × 개체 오차
+  const T_FACTOR = { 15: 0.18, 25: 0.52, 35: 1, 45: 0.8, 55: 0.1 };
+  function rate(t, tube, k) {
+    const { g, y, T } = tube;
+    if (!g || !y) return 0;
+    const fG = g / (g + 4) * (g >= 20 ? 0.92 : 1);
+    const fY = y / 10;
+    let fT = T_FACTOR[T];
+    if (T === 45) fT *= Math.exp(-t / 14);   // 높은 온도에서 효소가 점점 변성됨
+    if (T === 55) fT *= Math.exp(-t / 4);
+    const lag = 1 - Math.exp(-t / 2.5);
+    return 0.62 * fG * fY * fT * lag * k;
+  }
+  function simulate(tube, k) {
+    const dt = 0.05, series = [0];
+    let v = 0;
+    for (let i = 1; i <= 400; i++) {
+      v = Math.min(CAP, v + rate(i * dt, tube, k) * dt);
+      series.push(v);
+    }
+    return series; // 0.05분 간격, 401개
+  }
+  const volAt = (series, t) => series[Math.min(400, Math.max(0, Math.round(t / 0.05)))];
+
+  const used = tubes => LETTERS.filter(L => { const t = tubes[L]; return t.g != null || t.y != null || t.T != null || t.role; });
+  const complete = t => t.g != null && t.y != null && t.T != null;
+
+  // ---------- 단계 이동 ----------
+  function renderStepper() {
+    $('#stepper').innerHTML = STEPS.map((name, i) => {
+      const n = i + 1;
+      return `<button class="step-btn${stepDone(n) ? ' done' : ''}" data-go="${n}" ${S.step === n ? 'aria-current="step"' : ''}><span class="n">${n}</span><span class="t">${name}</span></button>`;
+    }).join('');
+  }
+  function stepDone(n) {
+    if (n === 1) return !!S.iv && S.problem.trim().length > 0;
+    if (n === 2) return [S.hypothesis, S.vInd, S.vDep, S.vCtrl].every(x => x.trim());
+    if (n === 3) { const u = used(S.tubes); return u.length >= 2 && u.every(L => complete(S.tubes[L]) && S.tubes[L].role); }
+    if (n === 4) return !!S.results;
+    if (n === 5) return S.analysis.trim().length > 0;
+    if (n === 6) return !!S.submittedAt;
+  }
+  function blockReason(target) {
+    if (target >= 4 && !stepDone(3)) return '실험하려면 STEP 3에서 2개 이상의 발효관에 용액·온도·대조군/실험군을 모두 정해야 해요.';
+    if (target >= 5 && !S.results) return 'STEP 4에서 가상 실험을 먼저 해야 결과를 분석할 수 있어요.';
+    return '';
+  }
+  function go(n) {
+    n = Math.max(1, Math.min(6, n));
+    const why = blockReason(n);
+    if (why) { $('#navMsg').textContent = why; return; }
+    $('#navMsg').textContent = '';
+    if (running) return;
+    S.step = n; save();
+    renderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  $('#stepper').addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) go(+b.dataset.go); });
+  $('#prevBtn').addEventListener('click', () => go(S.step - 1));
+  $('#nextBtn').addEventListener('click', () => go(S.step + 1));
+
+  function renderAll() {
+    $$('.sheet[data-step]').forEach(s => { s.hidden = +s.dataset.step !== S.step; });
+    $('#prevBtn').disabled = S.step === 1;
+    $('#nextBtn').hidden = S.step === 6;
+    renderStepper();
+    if (S.step === 1) renderIV();
+    if (S.step === 2) $('#problemEcho').textContent = S.problem ? '탐구 문제: ' + S.problem : '먼저 STEP 1에서 탐구 문제를 정하세요.';
+    if (S.step === 3) renderTubes();
+    if (S.step === 4) { renderRunTubes(); renderResultTable($('#runTable'), S); updateRunButton(); }
+    if (S.step === 5) { renderResultTable($('#resTable'), S); drawChart($('#chart'), S); }
+    if (S.step === 6) renderChecklist();
+    renderSubState();
+  }
+
+  // ---------- 텍스트 입력 ----------
+  $$('[data-field]').forEach(el => {
+    el.value = S[el.dataset.field] || '';
+    el.addEventListener('input', () => { S[el.dataset.field] = el.value; save(); updateCounts(); if (S.step === 6) renderChecklist(); renderStepper(); });
+  });
+  function updateCounts() { $$('[data-count]').forEach(c => { c.textContent = (S[c.dataset.count] || '').length + '자'; }); }
+  updateCounts();
+  $('#stuNo').value = S.student.no; $('#stuName').value = S.student.name;
+  $('#stuNo').addEventListener('input', e => { S.student.no = e.target.value.trim(); save(); if (S.step === 6) renderChecklist(); });
+  $('#stuName').addEventListener('input', e => { S.student.name = e.target.value.trim(); save(); if (S.step === 6) renderChecklist(); });
+
+  // ---------- STEP 1 ----------
+  function renderIV() {
+    $('#ivCards').innerHTML = Object.entries(IVS).map(([id, v]) =>
+      `<button class="iv-card" role="radio" data-iv="${id}" aria-checked="${S.iv === id}"><strong>${v.name}</strong><span>${v.desc}</span><span class="values">${v.values}</span></button>`).join('');
+  }
+  $('#ivCards').addEventListener('click', e => {
+    const b = e.target.closest('[data-iv]'); if (!b) return;
+    const prevProblem = S.iv ? IVS[S.iv].problem : '';
+    S.iv = b.dataset.iv;
+    if (!S.problem.trim() || S.problem === prevProblem) { S.problem = IVS[S.iv].problem; $('#problem').value = S.problem; }
+    save(); renderIV(); renderStepper();
+  });
+
+  // ---------- 발효관 그림 ----------
+  function liquidColor(t) {
+    if (t.g == null && t.y == null) return 'none';
+    const y = t.y || 0;
+    return `color-mix(in srgb, var(--yeast) ${y ? 18 + y * 1.6 : 0}%, var(--liquid-base))`;
+  }
+  function tubeSVG(id, t, vol) {
+    const fill = liquidColor(t);
+    const hasLiquid = fill !== 'none';
+    const gasH = Math.min(CAP, vol) * 8;
+    let ticks = '';
+    for (let m = 1; m <= CAP; m++) {
+      const yy = 14 + m * 8;
+      ticks += `<line x1="${m % 5 ? 46 : 42}" x2="54" y1="${yy}" y2="${yy}" stroke="var(--glass)" stroke-width="1"/>`;
+      if (m % 5 === 0) ticks += `<text x="26" y="${yy + 3.5}" font-size="10" text-anchor="end" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${m}</text>`;
+    }
+    const shapes = `<rect x="30" y="10" width="24" height="152" rx="12"/><rect x="30" y="148" width="76" height="26" rx="13"/><rect x="86" y="34" width="20" height="120"/><circle cx="96" cy="116" r="26"/>`;
+    return `<svg class="tube-svg" viewBox="0 0 130 190" aria-hidden="true">
+      <defs><clipPath id="arm-${id}"><rect x="31.5" y="11.5" width="21" height="150" rx="10.5"/></clipPath>
+      <clipPath id="body-${id}"><rect x="0" y="64" width="130" height="126"/></clipPath></defs>
+      <g fill="var(--surface)" stroke="var(--glass)" stroke-width="3">${shapes}</g>
+      <g fill="var(--surface)">${shapes}</g>
+      ${hasLiquid ? `<g fill="${fill}"><g clip-path="url(#arm-${id})"><rect x="30" y="10" width="24" height="160"/></g><g clip-path="url(#body-${id})">${shapes}</g></g>` : ''}
+      <g clip-path="url(#arm-${id})"><rect id="gas-${id}" x="30" y="10" width="24" height="${hasLiquid ? 4 + gasH : 0}" fill="var(--gas)"/>
+        <g id="bub-${id}"><circle class="bub" cx="40" cy="146" r="2.2" fill="var(--gas)"/><circle class="bub" cx="45" cy="150" r="1.6" fill="var(--gas)"/><circle class="bub" cx="38" cy="152" r="1.8" fill="var(--gas)"/></g></g>
+      <line x1="86" x2="106" y1="34" y2="34" stroke="var(--glass)" stroke-width="3"/>
+      ${ticks}
+      <text x="96" y="26" font-size="9" text-anchor="middle" fill="var(--muted)">열린 쪽</text>
+      <text x="42" y="186" font-size="9" text-anchor="middle" fill="var(--muted)">맹관부(mL)</text>
+    </svg>`;
+  }
+  function setGas(id, vol) {
+    const r = document.getElementById('gas-' + id);
+    if (r) r.setAttribute('height', 4 + Math.min(CAP, vol) * 8);
+  }
+
+  // ---------- STEP 3: 설계 ----------
+  function renderTubes() {
+    $('#tubes').innerHTML = LETTERS.map(L => {
+      const t = S.tubes[L];
+      const slot = (kind, val, label, hint) => {
+        const filled = val != null;
+        const k = !filled ? '' : val === 0 ? 'k-water' : 'k-' + kind;
+        return `<button class="slot${filled ? ' filled ' + k : ''}" data-slot="${kind}" data-tube="${L}" aria-label="발효관 ${L} ${hint} 칸">
+          <small>${hint}</small><span>${filled ? label : '여기에 끌어 놓기'}</span></button>`;
+      };
+      const roleCls = t.role === 'control' ? ' role-control' : t.role === 'exp' ? ' role-exp' : '';
+      return `<div class="tube-card${roleCls}">
+        <div class="tube-head"><b>${L}</b><span class="role-tag ${t.role || ''}">${roleLabel(t.role)}</span></div>
+        ${tubeSVG('d' + L, t, 0)}
+        ${slot('glucose', t.g, gLabel(t.g), '포도당 용액 20 mL')}
+        ${slot('yeast', t.y, yLabel(t.y), '효모액 10 mL')}
+        <div class="mini-label">항온 수조 온도</div>
+        <select data-temp="${L}" aria-label="발효관 ${L} 수조 온도">
+          <option value="">온도 선택</option>${TEMPS.map(x => `<option value="${x}" ${t.T === x ? 'selected' : ''}>${x}℃</option>`).join('')}
+        </select>
+        <div class="role-pick">
+          <button class="c" data-role="control" data-tube="${L}" aria-pressed="${t.role === 'control'}">대조군</button>
+          <button class="e" data-role="exp" data-tube="${L}" aria-pressed="${t.role === 'exp'}">실험군</button>
+        </div>
+        <button class="tube-clear" data-clear="${L}">발효관 비우기</button>
+      </div>`;
+    }).join('');
+    markArmed();
+  }
+  function changedDesign() {
+    if (S.results) { S.results = null; $('#designMsg').textContent = '설계를 바꾸어 이전 실험 결과를 지웠어요. STEP 4에서 다시 실험하세요.'; }
+    save(); renderTubes(); renderStepper();
+  }
+  const accepts = (slotKind, chipKind) => chipKind === slotKind || chipKind === 'water';
+  function assign(L, slotKind, value) {
+    S.tubes[L][slotKind === 'glucose' ? 'g' : 'y'] = value;
+    changedDesign();
+  }
+  $('#tubes').addEventListener('change', e => {
+    const s = e.target.closest('[data-temp]'); if (!s) return;
+    S.tubes[s.dataset.temp].T = s.value ? +s.value : null; changedDesign();
+  });
+  $('#tubes').addEventListener('click', e => {
+    const r = e.target.closest('[data-role]');
+    if (r) { const t = S.tubes[r.dataset.tube]; t.role = t.role === r.dataset.role ? null : r.dataset.role; changedDesign(); return; }
+    const c = e.target.closest('[data-clear]');
+    if (c) { S.tubes[c.dataset.clear] = { g: null, y: null, T: null, role: null }; changedDesign(); return; }
+    const slot = e.target.closest('.slot');
+    if (!slot) return;
+    if (armed && accepts(slot.dataset.slot, armed.kind)) { assign(slot.dataset.tube, slot.dataset.slot, armed.value); armed = null; markArmed(); return; }
+    if (armed) { $('#designMsg').textContent = '그 용액은 이 칸에 넣을 수 없어요.'; return; }
+    const key = slot.dataset.slot === 'glucose' ? 'g' : 'y';
+    if (S.tubes[slot.dataset.tube][key] != null) assign(slot.dataset.tube, slot.dataset.slot, null);
+  });
+
+  // 끌어 놓기 (마우스·터치 공용) + 눌러서 고르기
+  let drag = null, armed = null;
+  function markArmed() {
+    $$('#palette .chip').forEach(c => c.setAttribute('aria-pressed', !!armed && c === armed.el));
+    $$('#tubes .slot').forEach(s => s.classList.toggle('can-drop', !!armed && accepts(s.dataset.slot, armed.kind)));
+  }
+  $('#palette').addEventListener('pointerdown', e => {
+    const chip = e.target.closest('.chip'); if (!chip || e.button > 0) return;
+    e.preventDefault(); // 글자 선택·기본 끌기 막기
+    drag = { chip, kind: chip.dataset.kind, value: +chip.dataset.value, x: e.clientX, y: e.clientY, moved: false, ghost: null, over: null };
+    try { chip.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) {
+      drag.moved = true;
+      drag.ghost = drag.chip.cloneNode(true);
+      drag.ghost.classList.add('chip-ghost');
+      document.body.appendChild(drag.ghost);
+      $$('#tubes .slot').forEach(s => s.classList.toggle('can-drop', accepts(s.dataset.slot, drag.kind)));
+    }
+    if (!drag.moved) return;
+    e.preventDefault();
+    drag.ghost.style.transform = `translate(${e.clientX - 30}px, ${e.clientY - 18}px)`;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const slot = el && el.closest('.slot');
+    if (drag.over && drag.over !== slot) drag.over.classList.remove('over');
+    drag.over = slot && accepts(slot.dataset.slot, drag.kind) ? slot : null;
+    if (drag.over) drag.over.classList.add('over');
+  });
+  function endDrag(e, cancelled) {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.ghost) d.ghost.remove();
+    if (d.moved) {
+      if (!cancelled && d.over) assign(d.over.dataset.tube, d.over.dataset.slot, d.value);
+      else markArmed();
+    } else if (!cancelled) {
+      armed = armed && armed.el === d.chip ? null : { el: d.chip, kind: d.kind, value: d.value };
+      markArmed();
+      $('#designMsg').textContent = armed ? `${d.chip.textContent}을(를) 골랐어요. 넣을 칸을 누르세요.` : '';
+    }
+  }
+  $('#palette').addEventListener('dragstart', e => e.preventDefault());
+  document.addEventListener('pointerup', e => endDrag(e, false));
+  document.addEventListener('pointercancel', e => endDrag(e, true));
+  // 키보드: Enter/Space는 click으로 들어온다
+  $('#palette').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip || e.detail !== 0) return; // 마우스 클릭은 pointerup에서 처리
+    armed = armed && armed.el === chip ? null : { el: chip, kind: chip.dataset.kind, value: +chip.dataset.value };
+    markArmed();
+  });
+
+  // ---------- STEP 4: 실험 ----------
+  let running = false;
+  function renderRunTubes(vols = null) {
+    const u = used(S.tubes);
+    $('#runTubes').innerHTML = LETTERS.map(L => {
+      const t = S.tubes[L];
+      const isUsed = u.includes(L);
+      let v = 0;
+      if (vols) v = vols[L] || 0;
+      else if (S.results && S.results.data[L]) v = S.results.koh && S.results.koh[L] != null ? S.results.koh[L] : S.results.data[L][TIMES.length - 1];
+      const kohBtn = S.results && isUsed && !running
+        ? (S.results.koh && S.results.koh[L] != null
+          ? `<span class="pill muted">KOH 넣음</span>`
+          : `<button class="btn small" data-koh="${L}">KOH 수용액 넣기</button>`) : '';
+      return `<div class="run-tube${isUsed ? '' : ' unused'}">
+        <div class="tube-head"><b>${L}</b><span class="role-tag ${t.role || ''}">${isUsed ? roleLabel(t.role) : '사용 안 함'}</span></div>
+        ${tubeSVG('r' + L, isUsed ? t : { g: null, y: null }, v)}
+        <div class="desc">${isUsed ? `${gLabel(t.g)} + ${yLabel(t.y)}<br>${tLabel(t.T)}` : '&nbsp;<br>&nbsp;'}</div>
+        <div class="vol" id="vol-${L}">${isUsed ? fmt(v) + ' mL' : '—'}</div>
+        <div>${kohBtn}</div>
+      </div>`;
+    }).join('');
+  }
+  function updateRunButton() {
+    $('#runBtn').textContent = running ? '실험 중…' : S.results ? '처음부터 다시 실험' : '실험 시작';
+    $('#runBtn').disabled = running;
+    if (!running) $('#clock').innerHTML = `${S.results ? '20.0' : '0.0'} <small>분 경과</small>`;
+  }
+  $('#runBtn').addEventListener('click', () => {
+    if (running || !stepDone(3)) return;
+    const u = used(S.tubes);
+    const series = {};
+    u.forEach(L => { series[L] = simulate(S.tubes[L], 0.94 + Math.random() * 0.12); });
+    const data = Object.fromEntries(u.map(L => [L, TIMES.map(() => null)]));
+    S.results = null; running = true;
+    renderRunTubes(Object.fromEntries(u.map(L => [L, 0])));
+    renderResultTable($('#runTable'), { tubes: S.tubes, results: { data, koh: {} } });
+    updateRunButton();
+    u.forEach(L => document.getElementById('bub-r' + L)?.parentNode.parentNode.classList.add('bubbling'));
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const duration = reduce ? 2500 : 10000;
+    const start = performance.now();
+    let nextIdx = 0;
+    $('#runMsg').textContent = '';
+    function frame(now) {
+      const simT = Math.min(20, (now - start) / duration * 20);
+      $('#clock').innerHTML = `${simT.toFixed(1)} <small>분 경과</small>`;
+      u.forEach(L => {
+        const v = volAt(series[L], simT);
+        setGas('r' + L, v);
+        const el = document.getElementById('vol-' + L); if (el) el.textContent = fmt(v) + ' mL';
+        const svg = document.getElementById('bub-r' + L)?.closest('svg');
+        if (svg) svg.classList.toggle('bubbling', rate(simT, S.tubes[L], 1) > 0.03 && v < CAP);
+      });
+      while (nextIdx < TIMES.length && simT >= TIMES[nextIdx]) {
+        u.forEach(L => { data[L][nextIdx] = Math.round(volAt(series[L], TIMES[nextIdx]) * 10) / 10; });
+        nextIdx++;
+        renderResultTable($('#runTable'), { tubes: S.tubes, results: { data, koh: {} } });
+      }
+      if (simT < 20) { requestAnimationFrame(frame); return; }
+      running = false;
+      S.runs = (S.runs || 0) + 1;
+      S.results = { times: TIMES, data, koh: {}, runAt: new Date().toISOString() };
+      save();
+      $$('#runTubes svg').forEach(s => s.classList.remove('bubbling'));
+      renderRunTubes(); renderResultTable($('#runTable'), S); updateRunButton(); renderStepper();
+      const full = u.filter(L => data[L][TIMES.length - 1] >= CAP);
+      $('#runMsg').className = 'msg good';
+      $('#runMsg').textContent = '실험이 끝났어요.' + (full.length ? ` 발효관 ${full.join(', ')}은(는) 맹관부 눈금 끝(15 mL)까지 기체가 찼어요.` : '');
+    }
+    requestAnimationFrame(frame);
+  });
+  $('#runTubes').addEventListener('click', e => {
+    const b = e.target.closest('[data-koh]'); if (!b || !S.results) return;
+    const L = b.dataset.koh;
+    const from = S.results.data[L][TIMES.length - 1];
+    const to = Math.round(from * 0.04 * 10) / 10; // CO2가 KOH에 흡수되고 아주 조금만 남음
+    b.disabled = true;
+    const start = performance.now();
+    (function anim(now) {
+      const p = Math.min(1, (now - start) / 1200);
+      const v = from + (to - from) * p;
+      setGas('r' + L, v);
+      const el = document.getElementById('vol-' + L); if (el) el.textContent = fmt(v) + ' mL';
+      if (p < 1) { requestAnimationFrame(anim); return; }
+      S.results.koh[L] = to; save();
+      renderRunTubes(); renderResultTable($('#runTable'), S);
+    })(start);
+  });
+
+  // ---------- 결과표·그래프 ----------
+  function renderResultTable(box, sub) {
+    const r = sub.results;
+    const u = r ? Object.keys(r.data) : [];
+    if (!r || !u.length) { box.innerHTML = '<p class="empty-state">아직 실험 결과가 없어요. 실험을 시작하면 5분마다 결과가 채워집니다.</p>'; return; }
+    const anyKoh = r.koh && Object.keys(r.koh).length;
+    box.innerHTML = `<table><thead><tr><th class="left">발효관</th><th class="left">조건</th><th>구분</th>${TIMES.map(t => `<th>${t}분</th>`).join('')}${anyKoh ? '<th>KOH 넣은 뒤</th>' : ''}</tr></thead><tbody>
+      ${u.map(L => { const t = sub.tubes[L]; return `<tr><td class="left"><span class="swatch" style="background:var(--t-${L.toLowerCase()})"></span><b>${L}</b></td>
+        <td class="left">${gLabel(t.g)} + ${yLabel(t.y)}, ${tLabel(t.T)}</td><td>${roleLabel(t.role)}</td>
+        ${r.data[L].map(v => `<td class="num">${v == null ? '' : fmt(v)}</td>`).join('')}
+        ${anyKoh ? `<td class="num">${r.koh[L] != null ? fmt(r.koh[L]) : '—'}</td>` : ''}</tr>`; }).join('')}
+      </tbody></table><p style="margin:.3rem 0 0;font-size:.78rem;color:var(--muted)">단위: 맹관부에 모인 기체 부피(mL)</p>`;
+  }
+  function drawChart(canvas, sub) {
+    if (!canvas || !canvas.offsetParent) return;
+    const r = sub.results;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const c = canvas.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    const font = css('--font-body');
+    const P = { l: 48, r: W < 480 ? 64 : 92, t: 14, b: 40 };
+    const pw = W - P.l - P.r, ph = H - P.t - P.b;
+    if (!r) return;
+    const u = Object.keys(r.data);
+    const maxV = Math.max(1, ...u.flatMap(L => r.data[L].filter(v => v != null)));
+    const step = maxV > 10 ? 3 : maxV > 4 ? 2 : 1;
+    const yMax = Math.ceil(maxV / step) * step;
+    const X = t => P.l + t / 20 * pw, Y = v => P.t + ph - v / yMax * ph;
+    c.font = `12px ${font}`; c.fillStyle = css('--muted'); c.strokeStyle = css('--line'); c.lineWidth = 1;
+    c.textAlign = 'right'; c.textBaseline = 'middle';
+    for (let v = 0; v <= yMax + 1e-9; v += step) { c.beginPath(); c.moveTo(P.l, Y(v)); c.lineTo(P.l + pw, Y(v)); c.stroke(); c.fillText(v, P.l - 8, Y(v)); }
+    c.textAlign = 'center'; c.textBaseline = 'top';
+    TIMES.forEach(t => c.fillText(t, X(t), P.t + ph + 6));
+    c.fillText('시간(분)', P.l + pw / 2, P.t + ph + 22);
+    c.save(); c.translate(13, P.t + ph / 2); c.rotate(-Math.PI / 2); c.textBaseline = 'middle'; c.fillText('기체 부피(mL)', 0, 0); c.restore();
+    const ends = [];
+    u.forEach(L => {
+      const col = tubeColor(L), pts = r.data[L];
+      c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 2.5;
+      c.beginPath(); pts.forEach((v, i) => { if (v == null) return; i ? c.lineTo(X(TIMES[i]), Y(v)) : c.moveTo(X(TIMES[i]), Y(v)); }); c.stroke();
+      pts.forEach((v, i) => { if (v == null) return; c.beginPath(); c.arc(X(TIMES[i]), Y(v), 3.5, 0, Math.PI * 2); c.fill(); });
+      ends.push({ L, y: Y(pts[pts.length - 1] ?? 0), col });
+    });
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].y = ends[i - 1].y + 16;
+    c.textAlign = 'left'; c.textBaseline = 'middle'; c.font = `600 12px ${font}`;
+    ends.forEach(e => { c.fillStyle = e.col; const role = sub.tubes[e.L].role; c.fillText(`${e.L}${W < 480 ? '' : ' ' + roleLabel(role)}`, P.l + pw + 8, e.y); });
+  }
+  const redrawCharts = () => { if (S.step === 5) drawChart($('#chart'), S); if (selected && subs[selected]) drawChart($('#tChart'), subs[selected]); };
+  new ResizeObserver(redrawCharts).observe(document.body);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redrawCharts);
+  new MutationObserver(redrawCharts).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // ---------- STEP 6: 제출 ----------
+  function checks(sub) {
+    const u = used(sub.tubes);
+    return [
+      ['학번·이름', sub.student.no && sub.student.name],
+      ['탐구 문제', sub.iv && sub.problem.trim()],
+      ['가설', sub.hypothesis.trim()],
+      ['독립·종속·통제 변인', sub.vInd.trim() && sub.vDep.trim() && sub.vCtrl.trim()],
+      [`실험 설계 (발효관 ${u.length}개)`, u.length >= 2 && u.every(L => complete(sub.tubes[L]) && sub.tubes[L].role)],
+      ['대조군 설정 까닭', sub.controlReason.trim()],
+      ['실험 결과', !!sub.results],
+      ['결과 분석', sub.analysis.trim()],
+      ['결론', sub.conclusion.trim()],
+    ];
+  }
+  function renderChecklist() {
+    $('#checklist').innerHTML = checks(S).map(([n, ok]) => `<li class="${ok ? 'ok' : 'no'}"><span class="mk">${ok ? '✓' : '–'}</span>${n}</li>`).join('');
+    $('#submitBtn').disabled = closed;
+    $('#submitBtn').textContent = S.submittedAt ? '수정한 내용으로 다시 제출하기' : '선생님께 제출하기';
+    if (closed) { $('#submitMsg').className = 'msg warn'; $('#submitMsg').textContent = '선생님이 제출을 마감했어요.'; }
+  }
+  function renderSubState() {
+    $('#subState').innerHTML = S.submittedAt
+      ? `<span class="pill good">제출함</span> ${new Date(S.submittedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+      : '<span class="pill muted">아직 제출 안 함</span>';
+  }
+  function payload() {
+    const { step, ...rest } = S;
+    return JSON.parse(JSON.stringify({ ...rest, submittedAt: new Date().toISOString() }));
+  }
+  const encode = obj => 'FERM1:' + btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+  const decode = str => JSON.parse(decodeURIComponent(escape(atob(str.trim().replace(/^FERM1:/, '')))));
+  function showFallback(p) {
+    $('#fallback').hidden = false;
+    $('#fallbackCode').value = encode(p);
+  }
+  $('#copyCode').addEventListener('click', () => {
+    const ta = $('#fallbackCode');
+    navigator.clipboard?.writeText(ta.value).then(() => { $('#copyCode').textContent = '복사했어요'; }, () => { ta.select(); });
+  });
+  $('#submitBtn').addEventListener('click', async () => {
+    const missing = checks(S).filter(([, ok]) => !ok).map(([n]) => n);
+    const msg = $('#submitMsg');
+    if (!S.student.no || !S.student.name) { msg.className = 'msg bad'; msg.textContent = '맨 위에 학번과 이름을 적어야 제출할 수 있어요.'; $('#stuNo').focus(); return; }
+    if (closed) return;
+    const p = payload();
+    $('#submitBtn').disabled = true;
+    msg.className = 'msg'; msg.textContent = '제출하는 중…';
+    if (db && uid) {
+      try {
+        await db.doc('submissions/' + uid).set(p);
+        S.submittedAt = p.submittedAt; save();
+        msg.className = 'msg good';
+        msg.textContent = '제출했어요.' + (missing.length ? ` (비어 있는 항목: ${missing.join(', ')})` : '') + ' 마감 전까지는 고쳐서 다시 제출할 수 있어요.';
+        $('#fallback').hidden = true;
+        renderChecklist(); renderSubState(); renderStepper();
+      } catch (e) {
+        msg.className = 'msg bad'; msg.textContent = '바로 제출하지 못했어요. 아래 제출 코드를 복사해 선생님께 보내세요.';
+        showFallback(p);
+      }
+    } else {
+      msg.className = 'msg warn'; msg.textContent = '이 화면에서는 바로 제출할 수 없어요. 아래 제출 코드를 복사해 선생님께 보내세요.';
+      showFallback(p);
+    }
+    $('#submitBtn').disabled = closed;
+  });
+
+  // ---------- 플랫폼 연결 ----------
+  let db = null, user = null, uid = null, isOwner = false, closed = false;
+  let subs = {}, grades = {}, selected = null;
+
+  (async () => {
+    if (!window.claude || !window.claude.use) return;
+    [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    if (user) { uid = await user.id(); isOwner = await user.isOwner(); }
+    if (!db) return;
+    db.doc('settings/main').onSnapshot(s => {
+      closed = !!(s.exists && s.data().closed);
+      $('#openToggle').checked = !closed;
+      if (S.step === 6) renderChecklist();
+    }, () => {});
+    if (uid && !S.submittedAt) {
+      try {
+        const mine = await db.doc('submissions/' + uid).get();
+        if (mine.exists && !S.hypothesis && !S.analysis) {
+          S = Object.assign(blank(), JSON.parse(JSON.stringify(mine.data())), { step: S.step });
+          save();
+          $$('[data-field]').forEach(el => { el.value = S[el.dataset.field] || ''; });
+          $('#stuNo').value = S.student.no; $('#stuName').value = S.student.name;
+          updateCounts(); renderAll();
+        } else if (mine.exists) { S.submittedAt = mine.data().submittedAt; save(); renderSubState(); }
+      } catch (e) {}
+    }
+    if (isOwner) startTeacher();
+  })();
+
+  // ---------- 교사 화면 ----------
+  function showView(teacher) {
+    $('#studentView').hidden = teacher; $('#teacherView').hidden = !teacher;
+    $('#tabStudent').setAttribute('aria-selected', !teacher); $('#tabTeacher').setAttribute('aria-selected', teacher);
+    if (teacher) renderTeacher(); else renderAll();
+  }
+  $('#tabStudent').addEventListener('click', () => showView(false));
+  $('#tabTeacher').addEventListener('click', () => showView(true));
+
+  function startTeacher() {
+    $('#tabTeacher').hidden = false;
+    db.collection('submissions').onSnapshot(snap => {
+      subs = {}; snap.docs.forEach(d => { subs[d.id] = Object.assign(blank(), d.data()); });
+      renderTeacher();
+    }, e => { $('#tMsg').textContent = '제출 목록을 불러오지 못했어요. 새로 고침해 보세요.'; });
+    db.collection('grades').onSnapshot(snap => {
+      grades = {}; snap.docs.forEach(d => { grades[d.id] = d.data(); });
+      renderTeacher(true);
+    }, () => {});
+  }
+  $('#openToggle').addEventListener('change', async e => {
+    try { await db.doc('settings/main').set({ closed: !e.target.checked }); $('#tMsg').textContent = e.target.checked ? '제출을 다시 받아요.' : '제출을 마감했어요.'; }
+    catch (err) { e.target.checked = !e.target.checked; $('#tMsg').textContent = '설정을 바꾸지 못했어요.'; }
+  });
+
+  const ids = () => Object.keys(subs).sort((a, b) => String(subs[a].student.no).localeCompare(String(subs[b].student.no), 'ko', { numeric: true }));
+  function renderTeacher(gradesOnly) {
+    if ($('#teacherView').hidden) return;
+    const list = ids();
+    const graded = list.filter(id => grades[id] && grades[id].level != null).length;
+    $('#tSummary').innerHTML = `<span>제출 <b>${list.length}</b>명</span><span>채점 완료 <b>${graded}</b>명</span>` +
+      Object.entries(IVS).map(([k, v]) => `<span>${v.name} <b>${list.filter(id => subs[id].iv === k).length}</b></span>`).join('');
+    $('#subRows').innerHTML = list.length ? list.map(id => {
+      const s = subs[id], g = grades[id];
+      const score = g && g.level != null ? `<span class="pill good">${LEVELS[g.level].score}</span>` : '<span class="pill muted">미채점</span>';
+      return `<tr data-sub="${esc(id)}" aria-selected="${id === selected}"><td class="num">${esc(s.student.no)}</td><td class="left">${esc(s.student.name)}</td><td>${s.iv ? IVS[s.iv].name : '—'}</td><td>${score}</td></tr>`;
+    }).join('') : '<tr><td colspan="4" class="empty-state">아직 제출한 학생이 없어요. 학생이 STEP 6에서 제출하면 여기에 바로 나타납니다.</td></tr>';
+    if (selected && subs[selected] && !gradesOnly && detailKey !== selected + subs[selected].submittedAt) renderDetail(selected);
+    if (selected && !subs[selected]) { selected = null; $('#detail').innerHTML = '<div class="empty-state">왼쪽 목록에서 학생을 고르면 답안과 실험 결과가 보여요.</div>'; }
+  }
+  $('#subRows').addEventListener('click', e => {
+    const tr = e.target.closest('[data-sub]'); if (!tr) return;
+    selected = tr.dataset.sub;
+    $$('#subRows tr').forEach(r => r.setAttribute('aria-selected', r.dataset.sub === selected));
+    renderDetail(selected);
+  });
+
+  function autoCheck(s) {
+    const out = [];
+    const u = used(s.tubes);
+    if (u.length < 2) { out.push(['bad', `사용한 발효관이 ${u.length}개뿐`]); return out; }
+    const vars = { g: '포도당 농도', y: '효모액 농도', T: '온도' };
+    const varied = Object.keys(vars).filter(k => new Set(u.map(L => s.tubes[L][k])).size > 1);
+    const ivKey = s.iv ? IVS[s.iv].key : null;
+    if (ivKey) {
+      const n = new Set(u.map(L => s.tubes[L][ivKey])).size;
+      out.push([n >= 2 ? 'good' : 'bad', `독립 변인(${vars[ivKey]}) 값 ${n}가지: ${u.map(L => L + '=' + fmtVar(ivKey, s.tubes[L][ivKey])).join(', ')}`]);
+    }
+    const extra = varied.filter(k => k !== ivKey);
+    out.push(extra.length ? ['bad', `독립 변인 외에 달라진 조건 있음: ${extra.map(k => vars[k]).join(', ')}`] : ['good', '독립 변인 외의 조건은 모든 발효관에서 같음']);
+    const ctrl = u.filter(L => s.tubes[L].role === 'control');
+    out.push(ctrl.length ? ['good', `대조군: ${ctrl.map(L => `${L}(${gLabel(s.tubes[L].g)}, ${yLabel(s.tubes[L].y)}, ${tLabel(s.tubes[L].T)})`).join(', ')}`] : ['warn', '대조군으로 지정한 발효관 없음']);
+    out.push(s.results ? ['good', `가상 실험 ${s.runs || 1}회 실시`] : ['bad', '실험 결과 없음']);
+    const koh = s.results && s.results.koh ? Object.keys(s.results.koh) : [];
+    out.push(koh.length ? ['good', `KOH 확인: ${koh.join(', ')}`] : ['warn', 'KOH 확인 안 함']);
+    return out;
+  }
+  const fmtVar = (k, v) => k === 'g' ? (v === 0 ? '증류수' : v + '%') : k === 'y' ? (v === 0 ? '증류수' : v + '%') : v + '℃';
+  const ans = (label, text) => `<div class="qa"><span>${label}</span><div class="answer${text && String(text).trim() ? '' : ' empty'}">${text && String(text).trim() ? esc(text) : '작성하지 않음'}</div></div>`;
+  function suggestLevel(areas) {
+    const vals = AREAS.map(([k]) => areas[k]);
+    if (vals.some(v => v === '' || v == null)) return null;
+    const sum = vals.reduce((a, v) => a + +v, 0);
+    return sum === 8 ? 0 : sum === 7 ? 1 : sum === 6 ? 2 : sum === 5 ? 3 : sum >= 3 ? 4 : 5;
+  }
+  let detailKey = '';
+  function renderDetail(id) {
+    const s = subs[id], g = grades[id] || {};
+    detailKey = id + s.submittedAt;
+    const areas = g.areas || {};
+    const u = used(s.tubes);
+    const sug = suggestLevel(areas);
+    $('#detail').innerHTML = `<div class="detail">
+      <section><div class="eyebrow">${esc(s.student.no)} · 제출 ${s.submittedAt ? new Date(s.submittedAt).toLocaleString('ko-KR') : '—'}</div>
+        <h2 style="margin:.1rem 0 0;font-size:1.3rem">${esc(s.student.name) || '이름 없음'}</h2></section>
+      <section><h3>1. 탐구 문제</h3><div>독립 변인 선택: <b>${s.iv ? IVS[s.iv].name : '—'}</b></div>${ans('탐구 문제', s.problem)}</section>
+      <section><h3>2. 가설과 변인</h3>${ans('가설', s.hypothesis)}${ans('독립 변인', s.vInd)}${ans('종속 변인', s.vDep)}${ans('통제 변인', s.vCtrl)}</section>
+      <section><h3>3. 실험 설계</h3>
+        <div class="table-scroll"><table><thead><tr><th>발효관</th><th class="left">포도당 용액</th><th class="left">효모액</th><th>온도</th><th>구분</th></tr></thead><tbody>
+        ${u.map(L => { const t = s.tubes[L]; return `<tr><td><b>${L}</b></td><td class="left">${gLabel(t.g)}</td><td class="left">${yLabel(t.y)}</td><td>${tLabel(t.T)}</td><td>${roleLabel(t.role)}</td></tr>`; }).join('') || '<tr><td colspan="5">설계 없음</td></tr>'}
+        </tbody></table></div>${ans('대조군·실험군을 정한 까닭', s.controlReason)}</section>
+      <section><h3>4. 실험 결과</h3><div class="table-scroll" id="tTable"></div>
+        <div class="chart-box" style="height:260px"><canvas id="tChart" role="img" aria-label="학생 실험 결과 그래프"></canvas></div></section>
+      <section><h3>5. 결과 분석</h3>${ans('결과 분석', s.analysis)}</section>
+      <section><h3>6. 결론</h3>${ans('결론', s.conclusion)}</section>
+      <section><h3>자동 점검 <span style="font-weight:400;font-size:.8rem;color:var(--muted)">채점 참고용 · 학생에게는 보이지 않음</span></h3>
+        <ul class="checks">${autoCheck(s).map(([k, t]) => `<li><span class="pill ${k === 'good' ? 'good' : 'warn'}">${k === 'good' ? '확인' : k === 'bad' ? '문제' : '주의'}</span><span>${esc(t)}</span></li>`).join('')}</ul></section>
+      <section><h3>채점</h3>
+        <form class="grade-form" id="gradeForm">
+          <div class="areas">${AREAS.map(([k, n]) => `<label for="ar-${k}">${n}<select id="ar-${k}" name="${k}">${AREA_OPTS.map(([v, l]) => `<option value="${v}" ${String(areas[k] ?? '') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`).join('')}</div>
+          <div class="msg" id="sugMsg">${sug != null ? `영역 평가로 본 추천: <b>${LEVELS[sug].score}점</b> (최종 점수는 직접 고르세요)` : '네 영역을 평가하면 추천 점수가 표시돼요.'}</div>
+          <div class="levels" role="radiogroup" aria-label="성취 수준">
+            ${LEVELS.map((l, i) => `<label class="${sug === i ? 'suggest' : ''}"><input type="radio" name="level" value="${i}" ${g.level === i ? 'checked' : ''}><span class="sc">${l.score}${/\d/.test(l.score) ? '점' : ''}</span><span>${l.text}</span></label>`).join('')}
+          </div>
+          <label class="field" for="gMemo"><span>메모·피드백</span><textarea id="gMemo" name="memo" rows="3">${esc(g.memo || '')}</textarea></label>
+          <div><button class="btn primary" type="submit">채점 저장</button> <span class="msg" id="gMsg"></span></div>
+        </form></section>
+    </div>`;
+    renderResultTable($('#tTable'), s);
+    drawChart($('#tChart'), s);
+    const form = $('#gradeForm');
+    form.addEventListener('change', e => {
+      if (!e.target.closest('.areas')) return;
+      const a = Object.fromEntries(AREAS.map(([k]) => [k, form.elements[k].value]));
+      const sg = suggestLevel(a);
+      $('#sugMsg').innerHTML = sg != null ? `영역 평가로 본 추천: <b>${LEVELS[sg].score}점</b> (최종 점수는 직접 고르세요)` : '네 영역을 평가하면 추천 점수가 표시돼요.';
+      $$('.levels label', form).forEach((lb, i) => lb.classList.toggle('suggest', sg === i));
+    });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const lv = form.elements.level.value;
+      const doc = {
+        level: lv === '' ? null : +lv,
+        areas: Object.fromEntries(AREAS.map(([k]) => [k, form.elements[k].value])),
+        memo: form.elements.memo.value, gradedAt: new Date().toISOString(),
+      };
+      try { await db.doc('grades/' + id).set(doc); $('#gMsg').className = 'msg good'; $('#gMsg').textContent = '저장했어요.'; }
+      catch (err) { $('#gMsg').className = 'msg bad'; $('#gMsg').textContent = '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'; }
+    });
+  }
+
+  // CSV
+  $('#csvBtn').addEventListener('click', async () => {
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const head = ['학번', '이름', '독립변인', '탐구문제', '가설', '독립변인(서술)', '종속변인(서술)', '통제변인(서술)',
+      ...LETTERS.map(L => `발효관${L} 설계`), '대조군 설정 까닭', ...LETTERS.map(L => `발효관${L} 20분 기체(mL)`), ...LETTERS.map(L => `발효관${L} KOH 후(mL)`),
+      '결과분석', '결론', '제출시각', ...AREAS.map(([, n]) => n), '점수', '메모'];
+    const rows = ids().map(id => {
+      const s = subs[id], g = grades[id] || {}, r = s.results;
+      const t = s.tubes;
+      return [s.student.no, s.student.name, s.iv ? IVS[s.iv].name : '', s.problem, s.hypothesis, s.vInd, s.vDep, s.vCtrl,
+        ...LETTERS.map(L => used(t).includes(L) ? `${gLabel(t[L].g)} + ${yLabel(t[L].y)}, ${tLabel(t[L].T)}, ${roleLabel(t[L].role)}` : ''),
+        s.controlReason,
+        ...LETTERS.map(L => r && r.data[L] ? r.data[L][TIMES.length - 1] : ''),
+        ...LETTERS.map(L => r && r.koh && r.koh[L] != null ? r.koh[L] : ''),
+        s.analysis, s.conclusion, s.submittedAt ? new Date(s.submittedAt).toLocaleString('ko-KR') : '',
+        ...AREAS.map(([k]) => { const v = (g.areas || {})[k]; return v === '2' ? '잘함' : v === '1' ? '보통' : v === '0' ? '부족' : ''; }),
+        g.level != null ? LEVELS[g.level].score : '', g.memo || ''].map(q).join(',');
+    });
+    const csv = '﻿' + [head.map(q).join(','), ...rows].join('\r\n');
+    const dl = await window.claude?.use?.('downloads');
+    if (dl) {
+      try { await dl.save({ filename: 'fermentation-submissions.csv', data: csv }); $('#tMsg').textContent = ''; return; }
+      catch (e) { if (e && e.code === 'declined') return; }
+    }
+    try { await navigator.clipboard.writeText(csv); $('#tMsg').textContent = 'CSV 내용을 클립보드에 복사했어요. 스프레드시트에 붙여 넣으세요.'; }
+    catch (e) { $('#tMsg').textContent = '내려받기와 복사를 모두 할 수 없었어요.'; }
+  });
+
+  // 제출 코드 가져오기
+  $('#importToggle').addEventListener('click', () => { $('#importBox').hidden = !$('#importBox').hidden; });
+  $('#importBtn').addEventListener('click', async () => {
+    const lines = $('#importText').value.split(/\s+/).filter(x => x.startsWith('FERM1:'));
+    let ok = 0, bad = 0;
+    for (const line of lines) {
+      try {
+        const p = Object.assign(blank(), decode(line));
+        const id = 'code-' + String(p.student.no || 'x').replace(/[^0-9A-Za-z]/g, '') + '-' + Date.now().toString(36) + ok;
+        await db.doc('submissions/' + id).set(JSON.parse(JSON.stringify({ ...p, importedFromCode: true })));
+        ok++;
+      } catch (e) { bad++; }
+    }
+    $('#tMsg').textContent = lines.length ? `${ok}건 추가했어요.${bad ? ` ${bad}건은 코드가 잘못되어 건너뛰었어요.` : ''}` : '제출 코드(FERM1:로 시작)를 찾지 못했어요.';
+    if (ok) $('#importText').value = '';
+  });
+
+  renderAll();
+})();
+</script>
