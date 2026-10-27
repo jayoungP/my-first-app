@@ -8,6 +8,10 @@
  * 맨 오른쪽 두 칸(원본·채점 JSON)은 웹 앱이 읽는 값이므로 고치지 않는다.
  */
 
+// 선생님 비밀번호: 영어·숫자로 바꾸어 적고, 웹 앱 주소 끝에 ?key=비밀번호 를 붙여 열면 교사용 탭이 보인다.
+// 학생에게 알려 주지 말 것. 비워 두면 비밀번호로는 열 수 없고, 배포한 선생님 계정으로 로그인했을 때만 열린다.
+const TEACHER_KEY = '';
+
 const SHEET_NAME = '제출';
 const LETTERS = ['A', 'B', 'C', 'D'];
 const IV_NAMES = { glucose: '포도당 농도', yeast: '효모액 농도', temp: '발효 온도' };
@@ -45,7 +49,8 @@ function sheet_() {
   return sh;
 }
 function email_() { return (Session.getActiveUser().getEmail() || '').toLowerCase(); }
-function isTeacher_() {
+function isTeacher_(key) {
+  if (TEACHER_KEY && key === TEACHER_KEY) return true;
   const me = email_();
   if (!me) return false;
   const owner = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
@@ -53,7 +58,7 @@ function isTeacher_() {
     .toLowerCase().split(/[\s,]+/).filter(String);
   return me === owner || extra.indexOf(me) >= 0;
 }
-function requireTeacher_() { if (!isTeacher_()) throw new Error('선생님 계정만 쓸 수 있어요.'); }
+function requireTeacher_(key) { if (!isTeacher_(key)) throw new Error('선생님만 쓸 수 있어요. 주소의 ?key= 비밀번호를 확인하세요.'); }
 function isClosed_() { return PropertiesService.getScriptProperties().getProperty('CLOSED') === '1'; }
 function findRow_(sh, id) {
   const last = sh.getLastRow();
@@ -71,8 +76,8 @@ function tubeText_(t) {
 }
 
 // ---------- 학생 ----------
-function init() {
-  const out = { teacher: isTeacher_(), closed: isClosed_(), mine: null, sheetUrl: null };
+function init(key) {
+  const out = { teacher: isTeacher_(key), closed: isClosed_(), mine: null, sheetUrl: null };
   const me = email_();
   if (me) {
     const sh = sheet_();
@@ -127,8 +132,8 @@ function submit(json) {
 }
 
 // ---------- 선생님 ----------
-function listAll() {
-  requireTeacher_();
+function listAll(key) {
+  requireTeacher_(key);
   const sh = sheet_();
   const subs = {}, grades = {};
   const last = sh.getLastRow();
@@ -143,8 +148,8 @@ function listAll() {
   return JSON.stringify({ subs, grades, closed: isClosed_() });
 }
 
-function saveGrade(id, json) {
-  requireTeacher_();
+function saveGrade(key, id, json) {
+  requireTeacher_(key);
   const g = JSON.parse(json);
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -166,8 +171,8 @@ function saveGrade(id, json) {
   return JSON.stringify({ ok: true });
 }
 
-function setClosed(closed) {
-  requireTeacher_();
+function setClosed(key, closed) {
+  requireTeacher_(key);
   PropertiesService.getScriptProperties().setProperty('CLOSED', closed ? '1' : '0');
   return JSON.stringify({ closed: !!closed });
 }

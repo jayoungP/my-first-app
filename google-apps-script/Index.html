@@ -964,7 +964,12 @@
   let isOwner = false, closed = false;
   let subs = {}, grades = {}, selected = null;
 
-  gas('init').then(info => {
+  let teacherKey = '';
+  // 주소에 붙은 ?key= 값(선생님 비밀번호)을 읽는다.
+  const readKey = () => new Promise(resolve => {
+    try { google.script.url.getLocation(loc => resolve((loc.parameter && loc.parameter.key) || '')); } catch (e) { resolve(''); }
+  });
+  readKey().then(k => { teacherKey = k; return gas('init', k); }).then(info => {
     closed = info.closed; isOwner = info.teacher;
     if (S.step === 6) renderChecklist();
     if (info.mine) {
@@ -992,7 +997,7 @@
   async function loadTeacher() {
     $('#tMsg').className = 'msg'; $('#tMsg').textContent = '불러오는 중…';
     try {
-      const r = await gas('listAll');
+      const r = await gas('listAll', teacherKey);
       subs = {}; Object.entries(r.subs).forEach(([id, p]) => { subs[id] = Object.assign(blank(), p); });
       grades = r.grades; closed = r.closed;
       $('#openToggle').checked = !closed;
@@ -1003,7 +1008,7 @@
   }
   $('#refreshBtn').addEventListener('click', loadTeacher);
   $('#openToggle').addEventListener('change', async e => {
-    try { await gas('setClosed', !e.target.checked); closed = !e.target.checked; $('#tMsg').textContent = e.target.checked ? '제출을 다시 받아요.' : '제출을 마감했어요.'; }
+    try { await gas('setClosed', teacherKey, !e.target.checked); closed = !e.target.checked; $('#tMsg').textContent = e.target.checked ? '제출을 다시 받아요.' : '제출을 마감했어요.'; }
     catch (err) { e.target.checked = !e.target.checked; $('#tMsg').textContent = '설정을 바꾸지 못했어요.'; }
   });
 
@@ -1108,7 +1113,7 @@
         areas: Object.fromEntries(AREAS.map(([k]) => [k, form.elements[k].value])),
         memo: form.elements.memo.value, gradedAt: new Date().toISOString(),
       };
-      try { await gas('saveGrade', id, JSON.stringify(doc)); grades[id] = doc; renderTeacher(true); $('#gMsg').className = 'msg good'; $('#gMsg').textContent = '구글 시트에 저장했어요.'; }
+      try { await gas('saveGrade', teacherKey, id, JSON.stringify(doc)); grades[id] = doc; renderTeacher(true); $('#gMsg').className = 'msg good'; $('#gMsg').textContent = '구글 시트에 저장했어요.'; }
       catch (err) { $('#gMsg').className = 'msg bad'; $('#gMsg').textContent = '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'; }
     });
   }
