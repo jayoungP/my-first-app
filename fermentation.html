@@ -672,7 +672,7 @@
         ${slot('yeast', t.y, yLabel(t.y), '효모액 10 mL')}
         <div class="mini-label">항온 수조 온도</div>
         <select data-temp="${L}" aria-label="발효관 ${L} 수조 온도">
-          <option value="">온도 선택</option>${TEMPS.map(x => `<option value="${x}" ${t.T === x ? 'selected' : ''}>${x}℃</option>`).join('')}
+          <option value="">온도 선택</option>${TEMPS.map(x => `<option value="${x}" ${t.T === x ? 'selected' : ''}>${x}℃${x === 25 ? ' (실온)' : ''}</option>`).join('')}
         </select>
         <div class="role-pick">
           <button class="c" data-role="control" data-tube="${L}" aria-pressed="${t.role === 'control'}">대조군</button>
