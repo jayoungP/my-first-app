@@ -365,6 +365,10 @@
           </div>
         </div>
         <div class="tubes" id="tubes"></div>
+        <div class="note">
+          <h3>대조군 힌트</h3>
+          <p style="margin:0"><b>대조군</b>은 독립 변인을 처리하지 않았거나 비교의 기준이 되는 발효관입니다. 온도처럼 '없는 상태'를 만들 수 없는 조건은 실온과 같은 기준 조건을 대조군으로 둡니다.</p>
+        </div>
         <label class="field" for="controlReason"><span>대조군과 실험군을 이렇게 정한 까닭<em>어떤 발효관이 대조군인지, 왜 필요한지 적으세요.</em></span>
           <textarea id="controlReason" data-field="controlReason" rows="3"></textarea>
         </label>
@@ -1049,6 +1053,13 @@
     out.push(extra.length ? ['bad', `독립 변인 외에 달라진 조건 있음: ${extra.map(k => vars[k]).join(', ')}`] : ['good', '독립 변인 외의 조건은 모든 발효관에서 같음']);
     const ctrl = u.filter(L => s.tubes[L].role === 'control');
     out.push(ctrl.length ? ['good', `대조군: ${ctrl.map(L => `${L}(${gLabel(s.tubes[L].g)}, ${yLabel(s.tubes[L].y)}, ${tLabel(s.tubes[L].T)})`).join(', ')}`] : ['warn', '대조군으로 지정한 발효관 없음']);
+    // 대조군 기준: 포도당·효모액 실험은 증류수(0%), 온도 실험은 실온(25℃)
+    if (ctrl.length && ivKey) {
+      const expect = ivKey === 'T' ? 25 : 0;
+      const what = ivKey === 'g' ? '포도당 대신 증류수' : ivKey === 'y' ? '효모액 대신 증류수' : '실온 25℃';
+      const off = ctrl.filter(L => s.tubes[L][ivKey] !== expect);
+      out.push(off.length ? ['warn', `대조군 ${off.join(', ')}이(가) 기준 조건(${what})이 아님`] : ['good', `대조군이 기준 조건(${what})임`]);
+    }
     out.push(s.results ? ['good', `가상 실험 ${s.runs || 1}회 실시`] : ['bad', '실험 결과 없음']);
     const koh = s.results && s.results.koh ? Object.keys(s.results.koh) : [];
     out.push(koh.length ? ['good', `KOH 확인: ${koh.join(', ')}`] : ['warn', 'KOH 확인 안 함']);
